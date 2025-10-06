@@ -12,7 +12,7 @@ const router = express.Router(); // 🚪 Creamos el router
  * Esta ruta está protegida con el middleware verificarTokenExterno.
  * Solo los usuarios con un token válido pueden entrar.
  */
-router.get("/", verificarTokenExterno, async (req, res) => {
+router.get("/api/brigadas", verificarTokenExterno, async (req, res) => {
   try {
     // 🧑‍💻 req.user viene del token verificado por AutenVerifi
     const usuario = req.user;
