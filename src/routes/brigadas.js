@@ -33,7 +33,7 @@ router.get("/", verificarTokenExterno, async (req, res) => {
     console.log("👤 Usuario autenticado:", usuario.email);
 
     // 🚀 Obtenemos todas las brigadas desde Supabase
-    const { data, error } = await supabase.from("public.usuarios").select("*");
+    const { data, error } = await supabase.from("usuarios").select("*");
     if (error) throw error;
 
     // ✅ Si todo va bien, devolvemos los datos
