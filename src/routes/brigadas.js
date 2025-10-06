@@ -55,7 +55,7 @@ router.get("/", verificarTokenExterno, async (req, res) => {
  * Esta ruta sirve para crear una nueva brigada.
  * También está protegida por el token.
  */
-router.post("/", verificarTokenExterno, async (req, res) => {
+router.post("/brigadas", verificarTokenExterno, async (req, res) => {
   try {
     // 📥 Recibimos los datos que el usuario envía
     const { nombre, descripcion, jefe_brigada } = req.body;
