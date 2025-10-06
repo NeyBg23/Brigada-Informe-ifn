@@ -21,7 +21,7 @@ router.get("/", verificarTokenExterno, async (req, res) => {
     console.log("👤 Usuario autenticado:", usuario.email);
 
     // 🚀 Obtenemos todas las brigadas desde Supabase
-    const { data, error } = await supabase.from("usuarios").select("*").throwOnError();
+    const { data, error } = await supabase.from("usuarios").select("*");
     if (error) throw error;
 
     // ✅ Si todo va bien, respondemos con la info y el usuario autenticado
@@ -30,7 +30,6 @@ router.get("/", verificarTokenExterno, async (req, res) => {
       role: "admin",
       usuario: usuario,
       data,
-      error,
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
