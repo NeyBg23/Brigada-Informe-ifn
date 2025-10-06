@@ -27,7 +27,7 @@ export async function verificarTokenExterno(req, res, next) {
   try {
     // 🌐 3️⃣ Llamamos al servicio AutenVerifi (tu backend de autenticación)
     const respuesta = await axios.get(
-      `${process.env.AUTH_SERVICE_URL}/auth/login`,
+      `${process.env.AUTH_SERVICE_URL}/auth/verify`,
       {
         headers: { Authorization: `Bearer ${token}` },
       }
