@@ -30,6 +30,7 @@ router.get("/", verificarTokenExterno, async (req, res) => {
       role: "admin",
       usuario: usuario,
       data,
+      error,
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
