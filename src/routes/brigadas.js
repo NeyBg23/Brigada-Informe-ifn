@@ -27,6 +27,7 @@ router.get("/", verificarTokenExterno, async (req, res) => {
     // ✅ Si todo va bien, respondemos con la info y el usuario autenticado
     res.json({
       mensaje: "✅ Acceso permitido. Token verificado.",
+      role: "admin",
       usuario: usuario,
       data,
     });
