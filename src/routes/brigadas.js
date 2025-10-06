@@ -17,6 +17,7 @@ router.get("/", verificarTokenExterno, async (req, res) => {
     // 🧑‍💻 req.user viene del token verificado por AutenVerifi
     const usuario = req.user;
 
+
     console.log("👤 Usuario autenticado:", usuario.email);
 
     // 🚀 Obtenemos todas las brigadas desde Supabase

@@ -6,7 +6,18 @@ import brigadasRoutes from "./src/routes/brigadas.js"; // 👈 importante: ruta 
 dotenv.config();   // 📦 Activa las variables secretas (como SUPABASE_URL, PORT, etc.)  
 
 const app = express();   // 🚀 Crea la app de Express  // 🎬 Creamos nuestra aplicación Express
-app.use(cors());   //🛡️ Habilita CORS para todas las rutas  // 🔓 Permitimos peticiones desde fuera
+
+app.use(cors({
+  origin: [
+    "http://localhost:5173",
+    "https://react-vercel-deploy-brown.vercel.app"
+  ],
+  methods: ["GET", "POST", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"], // ✅ importante
+  credentials: true,
+}));
+
+
 app.use(express.json());
 
 // Ruta de prueba
