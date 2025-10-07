@@ -27,7 +27,7 @@ app.get("/", (req, res) => {
 });
 
 // Rutas principales del microservicio
-app.use("/api/brigadas", brigadasRoutes);
+app.use("/api", brigadasRoutes);
 // 🗺️ Si alguien entra a http://localhost:5000/api/brigadas → irá al archivo brigadas.js
 
 // Puerto de escucha O ENCENDEMOS EL SERVIDOR
@@ -40,3 +40,5 @@ app.listen(PORT, () => {
 
 // 🔄 Exportar la app para que Vercel pueda usarla
 export default app;
+
+

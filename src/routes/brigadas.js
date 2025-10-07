@@ -98,7 +98,7 @@ router.post("/usuarios", verificarTokenExterno, esAdmin, async (req, res) => {
 
 
 // 📍 GET /api/brigadas - Lista brigadas.
-router.get("/", verificarTokenExterno, async (req, res) => {
+router.get("/brigadas", verificarTokenExterno, async (req, res) => {
   try {
     const { data, error } = await supabase.from("usuarios").select("*");  // Corrige: antes era usuarios!
     if (error) throw error;
@@ -109,7 +109,7 @@ router.get("/", verificarTokenExterno, async (req, res) => {
 });
 
 // 📍 POST /api/brigadas - Crear brigada con empleados y jefe.
-router.post("/", verificarTokenExterno, esAdmin, async (req, res) => {
+router.post("/brigadas", verificarTokenExterno, esAdmin, async (req, res) => {
   try {
     const { nombre, descripcion, jefe_brigada, brigadistas } = req.body;  // brigadistas: array de uuids
     // 🧸 Paso 1: Crea la brigada.
