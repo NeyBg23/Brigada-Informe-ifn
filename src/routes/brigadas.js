@@ -49,7 +49,7 @@ router.get("/usuarios", verificarTokenExterno, esAdmin, async (req, res) => {
     // ✅ Si todo va bien, devolvemos los datos
     res.json({
       mensaje: "✅ Acceso permitido. Token verificado correctamente.",
-      usuario: usuario, // quién hizo la solicitud
+      usuario: "asdsad", // quién hizo la solicitud
       data, // datos de los usuarios o brigadas
     });
   } catch (err) {
