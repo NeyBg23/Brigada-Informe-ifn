@@ -72,8 +72,6 @@ router.get("/usuarios", verificarTokenExterno, async (req, res) => {
     // (esta info viene del token y la puso el middleware)
     const usuario = req.user;
 
-    return res.json({ usuario: usuario });
-
     console.log("👤 Usuario autenticado:", usuario.email);
 
     // 🚀 Obtenemos todas las brigadas desde Supabase
