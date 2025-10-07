@@ -7,6 +7,7 @@ dotenv.config();   // 📦 Activa las variables secretas (como SUPABASE_URL, POR
 
 const app = express();   // 🚀 Crea la app de Express  // 🎬 Creamos nuestra aplicación Express
 
+// 🧸 Agrega origins de producción.
 app.use(cors({
   origin: [
     "http://localhost:5173",
