@@ -21,9 +21,11 @@ async function esAdmin(req, res, next) {
     const usuario = req.user;
     const email = usuario?.correo || usuario?.email; // <-- Acepta ambos campos
 
+    return res.json({usuario}); // DEBUG: muestra el usuario
+
     if (!email) {
       console.warn("⚠️ El token no tiene correo o email:", usuario);
-      return res.status(500).json({ error: "Token inválido o sin correo ❌" });
+      return res.status(403).json({ error: "Token inválido o sin correo ❌" });
     }
 
     const { data, error } = await supabase
@@ -39,12 +41,12 @@ async function esAdmin(req, res, next) {
 
     if (!data) {
       console.warn("⚠️ Usuario no encontrado en la base:", email);
-      return res.status(500).json({ error: "Usuario no registrado ❌" });
+      return res.status(403).json({ error: "Usuario no registrado ❌" });
     }
 
     if (data.rol !== "admin") {
       console.warn(`🚫 Acceso denegado: ${email} tiene rol '${data.rol}'`);
-      return res.status(500).json({ error: "Solo admins pueden hacer esto ❌" });
+      return res.status(403).json({ error: "Solo admins pueden hacer esto ❌" });
     }
 
     next(); // ✅ Todo bien, continúa
