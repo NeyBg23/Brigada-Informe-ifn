@@ -38,9 +38,9 @@ router.get("/usuarios", verificarTokenExterno, esAdmin, async (req, res) => {
   try {
     // 👤 Tomamos la información del usuario autenticado
     // (esta info viene del token y la puso el middleware)
-    //const usuario = req.user;
+    const usuario = req.user;
 
-    //console.log("👤 Usuario autenticado:", usuario.email);
+    console.log("👤 Usuario autenticado:", usuario.email);
 
     // 🚀 Obtenemos todas las brigadas desde Supabase
     const { data, error } = await supabase.from("usuarios").select("*");
@@ -49,7 +49,7 @@ router.get("/usuarios", verificarTokenExterno, esAdmin, async (req, res) => {
     // ✅ Si todo va bien, devolvemos los datos
     res.json({
       mensaje: "✅ Acceso permitido. Token verificado correctamente.",
-      usuario: "asdsad", // quién hizo la solicitud
+      usuario: usuario, // quién hizo la solicitud
       data, // datos de los usuarios o brigadas
     });
   } catch (err) {
