@@ -21,7 +21,7 @@ async function esAdmin(req, res, next) {
     const usuario = req.user;
     const email = usuario?.correo || usuario?.email; // <-- Acepta ambos campos
 
-    return res.json({usuario}); // DEBUG: muestra el usuario
+    return res.json({ usuario: usuario, email: email }); // DEBUG: muestra el usuario
 
     if (!email) {
       console.warn("⚠️ El token no tiene correo o email:", usuario);
