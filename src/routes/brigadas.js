@@ -21,8 +21,6 @@ async function esAdmin(req, res, next) {
     const usuario = req.user;
     const email = usuario?.correo || usuario?.email; // <-- Acepta ambos campos
 
-    return res.json({ usuario: usuario, email: email }); // DEBUG: muestra el usuario
-
     if (!email) {
       console.warn("⚠️ El token no tiene correo o email:", usuario);
       return res.status(403).json({ error: "Token inválido o sin correo ❌" });
@@ -73,6 +71,8 @@ router.get("/usuarios", verificarTokenExterno, esAdmin, async (req, res) => {
     // 👤 Tomamos la información del usuario autenticado
     // (esta info viene del token y la puso el middleware)
     const usuario = req.user;
+
+    return res.json({ usuario: usuario });
 
     console.log("👤 Usuario autenticado:", usuario.email);
 
