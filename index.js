@@ -37,3 +37,5 @@ app.listen(PORT, () => {
 });
 // Nota: Asegúrate de tener las variables de entorno configuradas en un archivo .env
 // SUPABASE_URL y SUPABASE_KEY para la conexión a Supabase.
+
+export default app; // 👈 IMPORTANTE para que Vercel lo reconozca
