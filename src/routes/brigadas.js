@@ -100,7 +100,7 @@ router.post("/usuarios", verificarTokenExterno, esAdmin, async (req, res) => {
 // 📍 GET /api/brigadas - Lista brigadas.
 router.get("/", verificarTokenExterno, async (req, res) => {
   try {
-    const { data, error } = await supabase.from("brigadas").select("*");  // Corrige: antes era usuarios!
+    const { data, error } = await supabase.from("usuarios").select("*");  // Corrige: antes era usuarios!
     if (error) throw error;
     res.json({ data });
   } catch (err) {
