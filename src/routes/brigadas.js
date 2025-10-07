@@ -66,7 +66,7 @@ async function esAdmin(req, res, next) {
  * Si el token está bien ✅ → te deja pasar y devuelve los datos.
  * Si el token está mal ❌ → te dice “no puedes entrar”.
  */
-router.get("/usuarios", verificarTokenExterno, esAdmin, async (req, res) => {
+router.get("/usuarios", verificarTokenExterno, async (req, res) => {
   try {
     // 👤 Tomamos la información del usuario autenticado
     // (esta info viene del token y la puso el middleware)
