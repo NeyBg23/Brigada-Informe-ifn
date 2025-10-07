@@ -15,14 +15,46 @@ const router = express.Router();
 
 
 // 🧸 Función helper: Chequea si es admin (como un guardia que solo deja pasar al jefe).
+
 async function esAdmin(req, res, next) {
-  const usuario = req.user;  // Del token
-  const { data, error } = await supabase.from("usuarios").select("rol").eq("correo", usuario.correo).single();
-  if (error || data.rol !== 'admin') {
-    return res.status(403).json({ error: "Solo admins pueden hacer esto ❌" });
+  try {
+    const usuario = req.user;
+    const email = usuario?.correo || usuario?.email; // <-- Acepta ambos campos
+
+    if (!email) {
+      console.warn("⚠️ El token no tiene correo o email:", usuario);
+      return res.status(403).json({ error: "Token inválido o sin correo ❌" });
+    }
+
+    const { data, error } = await supabase
+      .from("usuarios")
+      .select("rol")
+      .eq("correo", email)
+      .maybeSingle();
+
+    if (error) {
+      console.error("❌ Error consultando Supabase:", error.message);
+      return res.status(500).json({ error: "Error al validar rol ❌" });
+    }
+
+    if (!data) {
+      console.warn("⚠️ Usuario no encontrado en la base:", email);
+      return res.status(403).json({ error: "Usuario no registrado ❌" });
+    }
+
+    if (data.rol !== "admin") {
+      console.warn(`🚫 Acceso denegado: ${email} tiene rol '${data.rol}'`);
+      return res.status(403).json({ error: "Solo admins pueden hacer esto ❌" });
+    }
+
+    next(); // ✅ Todo bien, continúa
+
+  } catch (err) {
+    console.error("💥 Error en esAdmin:", err.message);
+    res.status(500).json({ error: "Error interno en validación de rol 😔" });
   }
-  next();
 }
+
 /**
  * 📍 GET /api/brigadas
  * ----------------------------------------------------------
