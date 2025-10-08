@@ -170,7 +170,7 @@ router.get("/hoja-vida/:nombreArchivo", verificarTokenExterno, async (req, res) 
     const decodedFileName = decodeURIComponent(nombreArchivo);
 
     const { data, error } = await supabase.storage
-      .from("hojas_vida")
+      .from("hojas_de_vida")
       .createSignedUrl(`empleados/${decodedFileName}`, 60 * 10); // 10 min
 
     if (error) throw error;
