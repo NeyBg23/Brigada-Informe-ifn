@@ -139,6 +139,17 @@ router.get("/brigadas", verificarTokenExterno, async (req, res) => {
     res.status(500).json({ error: "Error al obtener brigadas 😔" });
   }
 });
+// 📍 GET /api/brigadas/:idbrigada - Detalle de una brigada.
+router.get("/brigadas/:idbrigada", verificarTokenExterno, async (req, res) => {
+  try {
+    const { idbrigada } = req.params;
+    const { data, error } = await supabase.from("brigadas").select("*").eq("id", idbrigada).maybeSingle();
+    if (error) throw error;
+    res.json({ data });
+  } catch (err) {
+    res.status(500).json({ error: "Error al obtener brigadas 😔" });
+  }
+});
 
 // 📍 POST /api/brigadas - Crear brigada con empleados y jefe.
 router.post("/brigadas", verificarTokenExterno, esAdmin, async (req, res) => {
@@ -158,6 +169,8 @@ router.post("/brigadas", verificarTokenExterno, esAdmin, async (req, res) => {
     res.status(500).json({ error: "Error al crear brigada 😔" });
   }
 });
+
+
 
 // 📍 POST /api/conglomerados - Crear conglomerado (nuevo).
 router.post("/conglomerados", verificarTokenExterno, esAdmin, async (req, res) => {
