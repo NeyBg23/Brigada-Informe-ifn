@@ -176,7 +176,7 @@ router.get("/hoja-vida/:nombreArchivo", async (req, res) => {
 
     //  .createSignedUrl(filePath, 600); // 10 minutos
 
-    return res.status(400).json({ error: })
+    return res.status(400).json({ error: data})
 
     if (error || !data) {
       console.error("❌ Error creando signed URL:", error, filePath);
