@@ -172,7 +172,11 @@ router.get("/hoja-vida/:nombreArchivo", async (req, res) => {
 
     const { data, error } = await supabase.storage
       .from("hojas_de_vida")
-      .createSignedUrl(filePath, 600); // 10 minutos
+      .select("*");
+
+    //  .createSignedUrl(filePath, 600); // 10 minutos
+
+    return res.status(400).json({ error: })
 
     if (error || !data) {
       console.error("❌ Error creando signed URL:", error, filePath);
