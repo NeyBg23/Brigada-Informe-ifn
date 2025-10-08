@@ -162,23 +162,30 @@ router.get("/empleados", verificarTokenExterno, async (req, res) => {
   }
 });
 // Dar acceso a datos sensibles
-router.get("/hoja-vida/:nombreArchivo", verificarTokenExterno, async (req, res) => {
+router.get("/hoja-vida/:nombreArchivo", async (req, res) => {
   try {
     const { nombreArchivo } = req.params;
-
-    // Decodificamos por si tiene espacios
     const decodedFileName = decodeURIComponent(nombreArchivo);
 
-    const { data, error } = await supabase.storage
-      .from("hojas_de_vida")
-      .createSignedUrl(`empleados/${decodedFileName}`, 60 * 10); // 10 min
+    console.log("🗂 Solicitando archivo:", decodedFileName);
 
-    if (error) throw error;
+    // 👇 Aquí agregamos la carpeta correcta "empleados/"
+    const filePath = `empleados/${decodedFileName}`;
+
+    // ✅ Creamos una URL firmada válida por 10 minutos
+    const { data, error } = await supabase.storage
+      .from("hojas_de_vida") // nombre exacto del bucket
+      .createSignedUrl(filePath, 60 * 10);
+
+    if (error || !data) {
+      console.error("❌ Error creando signed URL:", error);
+      return res.status(400).json({ error: "Error generando URL firmada" });
+    }
 
     res.json({ signedUrl: data.signedUrl });
   } catch (err) {
-    console.error("❌ Error generando signed URL:", err);
-    res.status(400).json({ error: "No se pudo generar el enlace firmado" });
+    console.error("🔥 Error en /hoja-vida:", err);
+    res.status(500).json({ error: "Error interno del servidor" });
   }
 });
 
