@@ -9,6 +9,7 @@
 import express from "express"; // Framework para crear el servidor
 import supabase from "../db/supabase.js"; // Conexión con la base de datos Supabase
 import { verificarTokenExterno } from "../middleware/verificarTokenExterno.js"; // Guardián del token
+import { v4 as uuidv4 } from "uuid";
 
 // 🚪 Creamos un router (una mini app con sus propias rutas)
 const router = express.Router();
@@ -165,20 +166,76 @@ router.get("/empleados", verificarTokenExterno, async (req, res) => {
 // Crear Empleados
 router.post("/empleados", verificarTokenExterno, async (req, res) => {
   try {
+    const {
+      nombre_completo,
+      correo,
+      cedula,
+      telefono,
+      region,
+      descripcion,
+      hoja_vida_nombre,
+      base64
+    } = req.body;
 
-    return res.json({ mensaje: req.body});
-    
-    const { nombre_completo, correo, cedula, telefono, region, descripcion } = req.body;
-    const { data: empleado, error: errBrig } = await supabase.from("usuarios").insert([
-      { nombre_completo, correo, cedula, telefono, region, descripcion }
-    ]).select();
-    if (errBrig) throw errBrig;
+    let hoja_vida_url = null;
 
-    res.json({ mensaje: "Empleado creado ✅", empleado: empleado})
+    // 🗂️ 2️⃣ Si viene la hoja de vida, subimos al Storage
+    if (base64) {
+      // Extraer solo la parte después de la coma
+      const base64Data = base64.split(",")[1];
+      const buffer = Buffer.from(base64Data, "base64");
+
+      // Nombre único para evitar conflictos
+      const nombreArchivo = `${uuidv4()}-${hoja_vida_nombre}`;
+
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from("hojas_vida") // nombre del bucket en Supabase
+        .upload(`empleados/${nombreArchivo}`, buffer, {
+          contentType: "application/pdf",
+          upsert: false,
+        });
+
+      if (uploadError) {
+        console.error("❌ Error subiendo hoja de vida:", uploadError);
+        throw new Error("Error al subir hoja de vida");
+      }
+
+      // Obtener URL pública
+      const { data: publicUrl } = supabase.storage
+        .from("hojas_vida")
+        .getPublicUrl(`empleados/${nombreArchivo}`);
+
+      hoja_vida_url = publicUrl.publicUrl;
+    }
+
+    // 👷‍♂️ 3️⃣ Crear el empleado en la base de datos
+    const { data, error } = await supabase
+      .from("empleados")
+      .insert([
+        {
+          nombre_completo,
+          correo,
+          cedula,
+          telefono,
+          region,
+          descripcion,
+          hoja_vida_url, 
+        },
+      ])
+      .select();
+
+    if (error) {
+      console.error("❌ Error insertando en la base:", error);
+      throw error;
+    }
+
+    res.json({ mensaje: "Empleado creado ✅", empleado: data[0] });
   } catch (err) {
-    res.status(500).json({ error: err.message})
+    console.error("🔥 Error en /empleados:", err);
+    res.status(500).json({ error: "Error al crear empleado 😔" });
   }
 });
+
 
 router.get("/empleados/:idempleado", verificarTokenExterno, async (req, res) => {
   try {
