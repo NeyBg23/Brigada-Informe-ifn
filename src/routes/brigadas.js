@@ -9,7 +9,6 @@
 import express from "express"; // Framework para crear el servidor
 import supabase from "../db/supabase.js"; // Conexión con la base de datos Supabase
 import { verificarTokenExterno } from "../middleware/verificarTokenExterno.js"; // Guardián del token
-import { v4 as uuidv4 } from "uuid";
 
 // 🚪 Creamos un router (una mini app con sus propias rutas)
 const router = express.Router();
