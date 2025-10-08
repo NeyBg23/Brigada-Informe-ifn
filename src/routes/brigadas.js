@@ -161,6 +161,28 @@ router.get("/empleados", verificarTokenExterno, async (req, res) => {
     res.status(500).json({ error: "Error al obtener empleados 😔" });
   }
 });
+// Dar acceso a datos sensibles
+router.get("/hoja-vida/:filename", verificarTokenExterno, async (req, res) => {
+  const { filename } = req.params;
+
+  try {
+    // Generar el signed URL (válido por 1 hora = 3600 segundos)
+    const { data, error } = await supabase.storage
+      .from("hojas_de_vida")
+      .createSignedUrl(`empleados/${filename}`, 3600);
+
+    if (error) {
+      console.error("❌ Error creando signed URL:", error);
+      return res.status(400).json({ error: "No se pudo generar enlace" });
+    }
+
+    // Devolver el enlace firmado
+    res.json({ signedUrl: data.signedUrl });
+  } catch (err) {
+    console.error("🔥 Error en /hoja-vida:", err);
+    res.status(500).json({ error: "Error al generar enlace firmado 😔" });
+  }
+});
 
 // Crear Empleados
 router.post("/empleados", verificarTokenExterno, async (req, res) => {
