@@ -165,21 +165,22 @@ router.get("/empleados", verificarTokenExterno, async (req, res) => {
 router.get("/hoja-vida/:nombreArchivo", async (req, res) => {
   try {
     const { nombreArchivo } = req.params;
-    console.log("🗂 Solicitando archivo firmado:", nombreArchivo);
+    const decodedFileName = decodeURIComponent(nombreArchivo);
 
-    // 🚫 No uses decodeURIComponent
-    const filePath = `empleados/${nombreArchivo}`;
+    console.log("🗂 Solicitando archivo:", decodedFileName);
 
-    const list = await supabase.storage.from("hojas_de_vida").list("empleados");
+    // ✅ Construimos correctamente la ruta dentro del bucket
+    const filePath = `empleados/${decodedFileName}`;
+    console.log("📁 filePath:", filePath);
 
     const { data, error } = await supabase.storage
       .from("hojas_de_vida")
       .createSignedUrl(filePath, 600); // 10 minutos
 
     if (error || !data) {
-      console.error("❌ Error creando signed URL:", error, filePath);
+      console.error("❌ Error creando signed URL:", error);
       return res.status(400).json({
-        error: `Error generando URL firmada: ${error?.message || "sin mensaje"} — ${filePath}`+list.data,
+        error: `Error generando URL firmada: ${error?.message || "Desconocido"} — ${filePath}`,
       });
     }
 
@@ -189,6 +190,7 @@ router.get("/hoja-vida/:nombreArchivo", async (req, res) => {
     res.status(500).json({ error: "Error interno del servidor" });
   }
 });
+
 
 
 
