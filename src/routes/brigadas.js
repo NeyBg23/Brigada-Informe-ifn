@@ -161,6 +161,7 @@ router.get("/empleados", verificarTokenExterno, async (req, res) => {
     res.status(500).json({ error: "Error al obtener empleados 😔" });
   }
 });
+
 // Crear Empleados
 router.post("/empleados", verificarTokenExterno, async (req, res) => {
   try {
@@ -170,7 +171,7 @@ router.post("/empleados", verificarTokenExterno, async (req, res) => {
     ]).select();
     if (errBrig) throw errBrig;
 
-    res.json({ mensaje: "Empleado creado ✅", empleado: empleado[0]})
+    res.json({ mensaje: "Empleado creado ✅", empleado: req.body})
   } catch (err) {
     res.status(500).json({ error: err.message})
   }
