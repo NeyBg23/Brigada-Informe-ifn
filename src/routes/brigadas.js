@@ -151,6 +151,16 @@ router.get("/brigadas/:idbrigada", verificarTokenExterno, async (req, res) => {
   }
 });
 
+router.get("/empleados", verificarTokenExterno, async (req, res) => {
+  try {
+    const { data, error } = await supabase.from("usuarios").select("*");
+    if (error) throw error;
+    res.json({ data });
+  } catch (err) {
+    res.status(500).json({ error: "Error al obtener empleados 😔" });
+  }
+});
+
 // 📍 POST /api/brigadas - Crear brigada con empleados y jefe.
 router.post("/brigadas", verificarTokenExterno, esAdmin, async (req, res) => {
   try {
