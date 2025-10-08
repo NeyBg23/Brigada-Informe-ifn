@@ -179,7 +179,7 @@ router.get("/hoja-vida/:nombreArchivo", async (req, res) => {
 
     if (error || !data) {
       console.error("❌ Error creando signed URL:", error);
-      return res.status(400).json({ error: "Error generando URL firmada" });
+      return res.status(400).json({ error: "Error generando URL firmada"+error.message });
     }
 
     res.json({ signedUrl: data.signedUrl });
