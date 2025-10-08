@@ -162,25 +162,23 @@ router.get("/empleados", verificarTokenExterno, async (req, res) => {
   }
 });
 // Dar acceso a datos sensibles
-router.get("/hoja-vida/:filename", verificarTokenExterno, async (req, res) => {
-  const { filename } = req.params;
-
+router.get("/hoja-vida/:nombreArchivo", verificarTokenExterno, async (req, res) => {
   try {
-    // Generar el signed URL (válido por 1 hora = 3600 segundos)
+    const { nombreArchivo } = req.params;
+
+    // Decodificamos por si tiene espacios
+    const decodedFileName = decodeURIComponent(nombreArchivo);
+
     const { data, error } = await supabase.storage
-      .from("hojas_de_vida")
-      .createSignedUrl(`empleados/${filename}`, 3600);
+      .from("hojas_vida")
+      .createSignedUrl(`empleados/${decodedFileName}`, 60 * 10); // 10 min
 
-    if (error) {
-      console.error("❌ Error creando signed URL:", error);
-      return res.status(400).json({ error: "No se pudo generar enlace" });
-    }
+    if (error) throw error;
 
-    // Devolver el enlace firmado
     res.json({ signedUrl: data.signedUrl });
   } catch (err) {
-    console.error("🔥 Error en /hoja-vida:", err);
-    res.status(500).json({ error: "Error al generar enlace firmado 😔" });
+    console.error("❌ Error generando signed URL:", err);
+    res.status(400).json({ error: "No se pudo generar el enlace firmado" });
   }
 });
 
