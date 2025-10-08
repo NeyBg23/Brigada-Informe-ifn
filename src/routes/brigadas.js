@@ -172,7 +172,7 @@ router.post("/empleados", verificarTokenExterno, async (req, res) => {
 
     res.json({ mensaje: "Empleado creado ✅", empleado: empleado[0]})
   } catch (err) {
-    res.status(500).json({ error: "Error al crear empleado 😔"})
+    res.status(500).json({ error: "Error al crear empleado 😔"+err.message})
   }
 });
 
