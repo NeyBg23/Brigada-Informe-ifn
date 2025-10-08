@@ -166,14 +166,7 @@ router.post("/empleados", verificarTokenExterno, async (req, res) => {
   try {
     const { nombre_completo, correo, cedula, telefono, region, descripcion } = req.body;
     const { data: empleado, error: errBrig } = await supabase.from("usuarios").insert([
-      { 
-        nombre_completo: nombre_completo, 
-        correo: correo, 
-        cedula: cedula, 
-        telefono: telefono, 
-        region: region, 
-        descripcion: descripcion 
-      }
+      { nombre_completo, correo, cedula, telefono, region, descripcion }
     ]).select();
     if (errBrig) throw errBrig;
 
