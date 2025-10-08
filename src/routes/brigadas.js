@@ -170,6 +170,8 @@ router.get("/hoja-vida/:nombreArchivo", async (req, res) => {
     // 🚫 No uses decodeURIComponent
     const filePath = `empleados/${nombreArchivo}`;
 
+    const list = await supabase.storage.from("hojas_de_vida").list("empleados");
+
     const { data, error } = await supabase.storage
       .from("hojas_de_vida")
       .createSignedUrl(filePath, 600); // 10 minutos
@@ -177,7 +179,7 @@ router.get("/hoja-vida/:nombreArchivo", async (req, res) => {
     if (error || !data) {
       console.error("❌ Error creando signed URL:", error, filePath);
       return res.status(400).json({
-        error: `Error generando URL firmada: ${error?.message || "sin mensaje"} — ${filePath}`+data,
+        error: `Error generando URL firmada: ${error?.message || "sin mensaje"} — ${filePath}`+list,
       });
     }
 
