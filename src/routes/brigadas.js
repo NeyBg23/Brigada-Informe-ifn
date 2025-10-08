@@ -165,13 +165,16 @@ router.get("/empleados", verificarTokenExterno, async (req, res) => {
 // Crear Empleados
 router.post("/empleados", verificarTokenExterno, async (req, res) => {
   try {
+
+    return res.json({ mensaje: req.body});
+    
     const { nombre_completo, correo, cedula, telefono, region, descripcion } = req.body;
     const { data: empleado, error: errBrig } = await supabase.from("usuarios").insert([
       { nombre_completo, correo, cedula, telefono, region, descripcion }
     ]).select();
     if (errBrig) throw errBrig;
 
-    res.json({ mensaje: "Empleado creado ✅", empleado: req.body})
+    res.json({ mensaje: "Empleado creado ✅", empleado: empleado})
   } catch (err) {
     res.status(500).json({ error: err.message})
   }
