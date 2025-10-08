@@ -173,42 +173,10 @@ router.post("/empleados", verificarTokenExterno, async (req, res) => {
       telefono,
       region,
       descripcion,
-      hoja_vida_nombre,
-      base64
+      hoja_vida_url, // ✅ ya viene directo del frontend (Subido a Storage)
     } = req.body;
 
-    let hoja_vida_url = null;
-
-    // 🗂️ 2️⃣ Si viene la hoja de vida, subimos al Storage
-    if (base64) {
-      // Extraer solo la parte después de la coma
-      const base64Data = base64.split(",")[1];
-      const buffer = Buffer.from(base64Data, "base64");
-
-      // Nombre único para evitar conflictos
-      const nombreArchivo = `${uuidv4()}-${hoja_vida_nombre}`;
-
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from("hojas_vida") // nombre del bucket en Supabase
-        .upload(`empleados/${nombreArchivo}`, buffer, {
-          contentType: "application/pdf",
-          upsert: false,
-        });
-
-      if (uploadError) {
-        console.error("❌ Error subiendo hoja de vida:", uploadError);
-        throw new Error("Error al subir hoja de vida");
-      }
-
-      // Obtener URL pública
-      const { data: publicUrl } = supabase.storage
-        .from("hojas_vida")
-        .getPublicUrl(`empleados/${nombreArchivo}`);
-
-      hoja_vida_url = publicUrl.publicUrl;
-    }
-
-    // 👷‍♂️ 3️⃣ Crear el empleado en la base de datos
+    // 👷‍♂️ Insertar en la base de datos
     const { data, error } = await supabase
       .from("empleados")
       .insert([
@@ -219,7 +187,7 @@ router.post("/empleados", verificarTokenExterno, async (req, res) => {
           telefono,
           region,
           descripcion,
-          hoja_vida_url, 
+          hoja_vida_url,
         },
       ])
       .select();
@@ -229,7 +197,10 @@ router.post("/empleados", verificarTokenExterno, async (req, res) => {
       throw error;
     }
 
-    res.json({ mensaje: "Empleado creado ✅", empleado: data[0] });
+    res.json({
+      mensaje: "Empleado creado ✅",
+      empleado: data[0],
+    });
   } catch (err) {
     console.error("🔥 Error en /empleados:", err);
     res.status(500).json({ error: "Error al crear empleado 😔" });
