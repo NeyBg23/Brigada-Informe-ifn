@@ -170,12 +170,14 @@ router.get("/hoja-vida/:nombreArchivo", async (req, res) => {
     console.log("🗂 Solicitando archivo:", decodedFileName);
 
     // 👇 Aquí agregamos la carpeta correcta "empleados/"
-    const filePath = `empleados/${decodedFileName}`;
+
+    const fileName = decodeURIComponent(req.params.fileName);
+    const filePath = `empleados/${fileName}`;
 
     // ✅ Creamos una URL firmada válida por 10 minutos
     const { data, error } = await supabase.storage
       .from("hojas_de_vida") // nombre exacto del bucket
-      .createSignedUrl(filePath, 60 * 10);
+      .createSignedUrl(filePath, 60);
 
     if (error || !data) {
       console.error("❌ Error creando signed URL:", error);
