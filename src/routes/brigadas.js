@@ -143,7 +143,7 @@ router.get("/brigadas", verificarTokenExterno, async (req, res) => {
 router.get("/brigadas/:idbrigada", verificarTokenExterno, async (req, res) => {
   try {
     const { idbrigada } = req.params;
-    const { data, error } = await supabase.from("brigadas").select("*").eq("id", idbrigada);
+    const { data, error } = await supabase.from("brigadas").select("*").eq("id", idbrigada).maybeSingle();
     if (error) throw error;
     res.json({ data });
   } catch (err) {
