@@ -177,7 +177,7 @@ router.post("/empleados", verificarTokenExterno, async (req, res) => {
 
     // 👷‍♂️ Insertar en la base de datos
     const { data, error } = await supabase
-      .from("empleados")
+      .from("usuarios")
       .insert([
         {
           nombre_completo,
