@@ -151,6 +151,7 @@ router.get("/brigadas/:idbrigada", verificarTokenExterno, async (req, res) => {
   }
 });
 
+// Ver Empleados
 router.get("/empleados", verificarTokenExterno, async (req, res) => {
   try {
     const { data, error } = await supabase.from("usuarios").select("*");
@@ -160,11 +161,20 @@ router.get("/empleados", verificarTokenExterno, async (req, res) => {
     res.status(500).json({ error: "Error al obtener empleados 😔" });
   }
 });
-
+// Crear Empleados
 router.post("/empleados", verificarTokenExterno, async (req, res) => {
   try {
     const { nombre_completo, correo, cedula, telefono, region, descripcion } = req.body;
-    const { data: empleado, error: errBrig } = await supabase.from("usuarios").insert([{ nombre_completo, correo, cedula, telefono, region, descripcion }]).select();
+    const { data: empleado, error: errBrig } = await supabase.from("usuarios").insert([
+      { 
+        nombre_completo: nombre_completo, 
+        correo: correo, 
+        cedula: cedula, 
+        telefono: telefono, 
+        region: region, 
+        descripcion: descripcion 
+      }
+    ]).select();
     if (errBrig) throw errBrig;
 
     res.json({ mensaje: "Empleado creado ✅", empleado: empleado[0]})
