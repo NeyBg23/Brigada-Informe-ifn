@@ -168,18 +168,18 @@ router.get("/hoja-vida/:nombreArchivo", async (req, res) => {
     const { nombreArchivo } = req.params;
     const decodedFileName = decodeURIComponent(nombreArchivo);
 
-    debug.one = "🗂 Solicitando archivo:", decodedFileName;
+    debug.one = `🗂 Solicitando archivo: ${decodedFileName}`;
 
     // ✅ Construimos correctamente la ruta dentro del bucket
     const filePath = `empleados/${decodedFileName}`;
-    debug.dos = "📁 filePath:", filePath;
+    debug.dos = `📁 filePath: ${filePath}`;
 
     const { data, error } = await supabase.storage
       .from("hojas_de_vida")
       .createSignedUrl(filePath, 600);
 
     if (error || !data || !data.signedUrl) {
-      debug.tres = "❌ Error creando signed URL:", error, data;
+      debug.tres = `❌ Error creando signed URL: ${error}, ${data}`;
       return res.json(debug);
     }
 
