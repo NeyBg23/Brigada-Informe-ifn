@@ -175,7 +175,7 @@ router.get("/hoja-vida/:nombreArchivo", async (req, res) => {
 
     const { data, error } = await supabase.storage
       .from("hojas_de_vida")
-      .createSignedUrl("empleados/1759958970669_Certificado Semillero Carlos.pdf", 600);
+      .createSignedUrl("empleados", 600);
 
     return res.status(500).json({ message: data, test: "Probando"})
 
