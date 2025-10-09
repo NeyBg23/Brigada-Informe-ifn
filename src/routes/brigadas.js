@@ -246,6 +246,16 @@ router.get("/empleados/:idempleado", verificarTokenExterno, async (req, res) => 
     res.status(500).json({ error: "Error al obtener empleado 😔" });
   } 
 });
+router.get("/conglomerados/:idconglomerado", verificarTokenExterno, async (req, res) => {
+  try {
+    const { idconglomerado } = req.params;
+    const { data, error } = await supabase.from("conglomerados").select("*").eq("id", idconglomerado).maybeSingle();
+    if (error) throw error;
+    res.json({ data });
+  } catch (err) {
+    res.status(500).json({ error: "Error al obtener conglomerado 😔" });
+  }
+});
 
 
 // 📍 POST /api/brigadas - Crear brigada con empleados y jefe.
