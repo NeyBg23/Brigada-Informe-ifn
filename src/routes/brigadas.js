@@ -163,8 +163,9 @@ router.get("/empleados", verificarTokenExterno, async (req, res) => {
 });
 // Dar acceso a datos sensibles
 router.get("/hoja-vida/:nombreArchivo", async (req, res) => {
+  const SUPABASE_KEY = process.env.SUPABASE_URL?.trim();
   const debug = {};
-  debug.envUrl = process.env.SUPABASE_URL;
+  debug.envUrl = SUPABASE_KEY;
   debug.serviceKeyPresent = !!process.env.SUPABASE_SERVICE_KEY;
   debug.serviceKeyPrefix = (process.env.SUPABASE_SERVICE_KEY || '').slice(0, 6);
   debug.raw = req.params.nombreArchivo;
