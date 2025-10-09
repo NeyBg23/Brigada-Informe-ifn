@@ -268,16 +268,13 @@ router.post("/brigadas", verificarTokenExterno, esAdmin, async (req, res) => {
 });
 
 
-
-// 📍 POST /api/conglomerados - Crear conglomerado (nuevo).
-router.post("/conglomerados", verificarTokenExterno, esAdmin, async (req, res) => {
+router.get("/conglomerados", verificarTokenExterno, async (req, res) => {
   try {
-    const { nombre, descripcion, ubicacion } = req.body;
-    const { data, error } = await supabase.from("conglomerados").insert([{ nombre, descripcion, ubicacion }]).select();
+    const { data, error } = await supabase.from("conglomerados").select("*");
     if (error) throw error;
-    res.json({ mensaje: "Conglomerado creado ✅", conglomerado: data[0] });
+    res.json({ data });
   } catch (err) {
-    res.status(500).json({ error: "Error al crear conglomerado 😔" });
+    res.status(500).json({ error: "Error al obtener conglomerados 😔" });
   }
 });
 
