@@ -177,7 +177,7 @@ router.get("/hoja-vida/:nombreArchivo", async (req, res) => {
     .from("hojas_de_vida")
     .list("");
 
-    return res.status(500).json({ message: data})
+    return res.status(500).json({ message: data, test: "Probando"})
 
     if (error || !data) {
       console.error("❌ Error creando signed URL:", error);
