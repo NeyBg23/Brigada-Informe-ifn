@@ -248,9 +248,8 @@ router.get("/empleados/:idempleado", verificarTokenExterno, async (req, res) => 
 });
 
 router.get("/conglomerados/:idconglomerado", verificarTokenExterno, async (req, res) => {
-  let idconglomerado = null;
+  const { idconglomerado } = req.params;
   try {
-    const { idconglomerado } = req.params;
     const { data, error } = await supabase.from("conglomerados").select("*").eq("id", idconglomerado).maybeSingle();
     if (error) throw error;
     res.json({ data });
