@@ -178,7 +178,7 @@ router.get("/hoja-vida/:nombreArchivo", async (req, res) => {
   const filePath = nombre.startsWith('empleados/') ? nombre : `empleados/${nombre}`;
   debug.filePath = filePath;
 
-  const { data, error } = await supabase.storage.from('hojas_de_vida').createSignedUrl(filePath, 600);
+  const { data, error } = await supabase.storage.from('hojas_de_vida').list("");
   debug.result = { data, error };
 
   res.json(debug); // 👈 Esto devuelve TODO lo que queremos ver
