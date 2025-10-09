@@ -11,7 +11,8 @@ const app = express();   // 🚀 Crea la app de Express  // 🎬 Creamos nuestra
 app.use(cors({
   origin: [
     "http://localhost:5173",
-    "https://react-vercel-deploy-brown.vercel.app"
+    "https://react-vercel-deploy-brown.vercel.app",
+    "https://brigada-informe-ifn.vercel.app"
   ],
   methods: ["GET", "POST", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"], // ✅ importante
