@@ -285,7 +285,7 @@ router.get("/conglomerados/:idconglomerado", verificarTokenExterno, async (req, 
     if (error) throw error;
     res.json({ data });
   } catch (err) {
-    res.status(500).json({ error: "Error al obtener conglomerado 😔"+id });
+    res.status(500).json({ error: "Error al obtener conglomerado 😔"+id, mas: debug });
   }
 });
 // 📍 POST /api/asignar-conglomerado - Asignar brigada a conglomerado.
