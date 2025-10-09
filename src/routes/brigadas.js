@@ -175,7 +175,7 @@ router.get("/hoja-vida/:nombreArchivo", async (req, res) => {
 
     const { data, error } = await supabase.storage
     .from("hojas_de_vida")
-    .list("");
+    .list("empleados");
 
     return res.status(500).json({ message: data, test: "Probando"})
 
