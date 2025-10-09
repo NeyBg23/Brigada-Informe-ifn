@@ -163,26 +163,24 @@ router.get("/empleados", verificarTokenExterno, async (req, res) => {
 });
 // Dar acceso a datos sensibles
 router.get("/hoja-vida/:nombreArchivo", async (req, res) => {
+  const debug = {};
   try {
     const { nombreArchivo } = req.params;
     const decodedFileName = decodeURIComponent(nombreArchivo);
 
-    console.log("🗂 Solicitando archivo:", decodedFileName);
+    debug.one = "🗂 Solicitando archivo:", decodedFileName;
 
     // ✅ Construimos correctamente la ruta dentro del bucket
     const filePath = `empleados/${decodedFileName}`;
-    console.log("📁 filePath:", filePath);
+    debug.dos = "📁 filePath:", filePath;
 
     const { data, error } = await supabase.storage
       .from("hojas_de_vida")
       .createSignedUrl(filePath, 600);
 
     if (error || !data || !data.signedUrl) {
-      console.error("❌ Error creando signed URL:", error, data);
-      return res.status(400).json({
-        error: `Error generando URL firmada: ${error?.message || "Desconocido"} — ${filePath}`,
-        data,
-      });
+      debug.tres = "❌ Error creando signed URL:", error, data;
+      return res.json(debug);
     }
 
     res.json({ signedUrl: data.signedUrl });
@@ -191,8 +189,6 @@ router.get("/hoja-vida/:nombreArchivo", async (req, res) => {
     res.status(500).json({ error: "Error interno del servidor" });
   }
 });
-
-
 
 
 // Crear Empleados
