@@ -247,17 +247,6 @@ router.get("/empleados/:idempleado", verificarTokenExterno, async (req, res) => 
   } 
 });
 
-router.get("/conglomerados/:idconglomerado", verificarTokenExterno, async (req, res) => {
-  const { idconglomerado } = req.params;
-  try {
-    const { data, error } = await supabase.from("conglomerados").select("*").eq("id", idconglomerado).maybeSingle();
-    if (error) throw error;
-    res.json({ data });
-  } catch (err) {
-    res.status(500).json({ error: "Error al obtener conglomerado 😔"+idconglomerado });
-  }
-});
-
 
 // 📍 POST /api/brigadas - Crear brigada con empleados y jefe.
 router.post("/brigadas", verificarTokenExterno, esAdmin, async (req, res) => {
@@ -278,7 +267,6 @@ router.post("/brigadas", verificarTokenExterno, esAdmin, async (req, res) => {
   }
 });
 
-
 router.get("/conglomerados", verificarTokenExterno, async (req, res) => {
   try {
     const { data, error } = await supabase.from("conglomerados").select("*");
@@ -288,7 +276,18 @@ router.get("/conglomerados", verificarTokenExterno, async (req, res) => {
     res.status(500).json({ error: "Error al obtener conglomerados 😔" });
   }
 });
-
+router.get("/conglomerados/:idconglomerado", verificarTokenExterno, async (req, res) => {
+  const debug = {}
+  try {
+    const { idconglomerado } = req.params;
+    const { data, error } = await supabase.from("conglomerados").select("*").eq("id", idconglomerado).maybeSingle();
+    debug.error = error;
+    if (error) throw error;
+    res.json({ data });
+  } catch (err) {
+    res.status(500).json({ error: "Error al obtener conglomerado 😔"+id });
+  }
+});
 // 📍 POST /api/asignar-conglomerado - Asignar brigada a conglomerado.
 router.post("/asignar-conglomerado", verificarTokenExterno, esAdmin, async (req, res) => {
   try {
