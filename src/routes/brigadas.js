@@ -282,7 +282,6 @@ router.get("/conglomerados/:idconglomerado", verificarTokenExterno, async (req, 
     const { idconglomerado } = req.params;
     const { data, error } = await supabase.from("conglomerados").select("*").eq("id", idconglomerado).maybeSingle();
     debug.error = error;
-    if (error) throw error;
     res.json({ data });
   } catch (err) {
     res.status(500).json({ error: "Error al obtener conglomerado 😔"+id, mas: debug });
