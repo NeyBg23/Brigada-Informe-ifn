@@ -7,7 +7,7 @@
 
 // 🧩 Importamos las herramientas necesarias
 import express from "express"; // Framework para crear el servidor
-import supabase from "../db/supabase.js"; // Conexión con la base de datos Supabase
+import { supabase } from "../db/supabase.js"; // Conexión con la base de datos Supabase
 import { verificarTokenExterno } from "../middleware/verificarTokenExterno.js"; // Guardián del token
 
 // 🚪 Creamos un router (una mini app con sus propias rutas)
