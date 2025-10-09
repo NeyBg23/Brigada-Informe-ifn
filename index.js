@@ -25,6 +25,8 @@ app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 // Ruta de prueba
 app.get("/", (req, res) => {
+  console.log("URL Supabase:", process.env.SUPABASE_URL);
+  console.log("KEY Supabase:", process.env.SUPABASE_KEY?.slice(0, 10)); // solo muestra primeros 10 chars
   res.json({ message: "Brigada Service funcionando 🚀" });
 });
 
