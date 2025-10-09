@@ -24,11 +24,6 @@ build
 out
 
 # ======================
-# Environment variables
-# ======================
-
-
-# ======================
 # Editor directories and files
 # ======================
 .vscode/*

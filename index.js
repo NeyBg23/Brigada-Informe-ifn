@@ -9,10 +9,8 @@ const app = express();   // 🚀 Crea la app de Express  // 🎬 Creamos nuestra
 
 // 🧸 Agrega origins de producción.
 app.use(cors({
-  origin: [
-    "http://localhost:5173",
+  origin: ["http://localhost:5173",
     "https://react-vercel-deploy-brown.vercel.app",
-    "https://jbfsszotislirbbphkdr.supabase.co", // Supabase
     "https://brigada-informe-ifn.vercel.app",   // tu backend en Vercel
   ],
   methods: ["GET", "POST", "OPTIONS"],

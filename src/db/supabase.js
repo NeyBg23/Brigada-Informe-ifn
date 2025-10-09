@@ -3,9 +3,11 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-export const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_KEY
-);
+const SUPABASE_ROLE_KEY = process.env.SUPABASE_ROLE_KEY;
+const SUPABASE_URL = process.env.SUPABASE_URL;
 
-export default supabase;  // Exportamos para usar en otras partes del proyecto
+if (!SUPABASE_URL || !SUPABASE_ROLE_KEY) {
+  throw new Error("❌ Faltan variables SUPABASE_URL o SUPABASE_ROLE_KEY en .env");
+}
+
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ROLE_KEY);
