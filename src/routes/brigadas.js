@@ -271,20 +271,24 @@ router.get("/conglomerados", verificarTokenExterno, async (req, res) => {
   try {
     const { data, error } = await supabase.from("conglomerados").select("*");
     if (error) throw error;
+
     res.json({ data });
+
   } catch (err) {
     res.status(500).json({ error: "Error al obtener conglomerados 😔" });
   }
 });
 router.get("/conglomerados/:idconglomerado", verificarTokenExterno, async (req, res) => {
-  const debug = {}
   try {
     const { idconglomerado } = req.params;
     const { data, error } = await supabase.from("conglomerados").select("*").eq("id", idconglomerado).maybeSingle();
-    debug.error = idconglomerado;
-    res.json({ data, mas: req.params });
+
+    if (error) throw error;
+
+    res.json({ data });
+
   } catch (err) {
-    res.status(500).json({ error: "Error al obtener conglomerado 😔"+id, mas: debug });
+    res.status(500).json({ error: "Error al obtener conglomerado 😔"});
   }
 });
 // 📍 POST /api/asignar-conglomerado - Asignar brigada a conglomerado.
