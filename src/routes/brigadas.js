@@ -163,34 +163,25 @@ router.get("/empleados", verificarTokenExterno, async (req, res) => {
 });
 // Dar acceso a datos sensibles
 router.get("/hoja-vida/:nombreArchivo", async (req, res) => {
-  try {
-    const { nombreArchivo } = req.params;
-    const decodedFileName = decodeURIComponent(nombreArchivo);
+  const debug = {};
+  debug.envUrl = process.env.SUPABASE_URL;
+  debug.serviceKeyPresent = !!process.env.SUPABASE_SERVICE_KEY;
+  debug.serviceKeyPrefix = (process.env.SUPABASE_SERVICE_KEY || '').slice(0, 6);
+  debug.raw = req.params.nombreArchivo;
 
-    console.log("🗂 Solicitando archivo:", decodedFileName);
+  let nombre = req.params.nombreArchivo;
+  try { nombre = decodeURIComponent(nombre); } catch {}
+  debug.decoded = nombre;
 
-    // ✅ Construimos correctamente la ruta dentro del bucket
-    const filePath = `empleados/${decodedFileName}`;
-    console.log("📁 filePath:", filePath);
+  const filePath = nombre.startsWith('empleados/') ? nombre : `empleados/${nombre}`;
+  debug.filePath = filePath;
 
-    const { data, error } = await supabase.storage
-      .from("hojas_de_vida")
-      .createSignedUrl(filePath, 600);
+  const { data, error } = await supabase.storage.from('hojas_de_vida').createSignedUrl(filePath, 600);
+  debug.result = { data, error };
 
-    if (error || !data || !data.signedUrl) {
-      console.error("❌ Error creando signed URL:", error, data);
-      return res.status(400).json({
-        error: `Error generando URL firmada: ${error?.message || "Desconocido"} — ${filePath}`,
-        data,
-      });
-    }
-
-    res.json({ signedUrl: data.signedUrl });
-  } catch (err) {
-    console.error("🔥 Error en /hoja-vida:", err);
-    res.status(500).json({ error: "Error interno del servidor" });
-  }
+  res.json(debug); // 👈 Esto devuelve TODO lo que queremos ver
 });
+
 
 
 
