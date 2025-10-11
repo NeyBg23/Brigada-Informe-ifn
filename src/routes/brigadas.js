@@ -190,6 +190,7 @@ router.get("/hoja-vida/:nombreArchivo", async (req, res) => {
   }
 });
 router.get("/perfil", verificarTokenExterno, async (req, res) => {
+  const debug = {};
   const userId = req.user.id;
 
   const { data, error } = await supabase
@@ -199,8 +200,9 @@ router.get("/perfil", verificarTokenExterno, async (req, res) => {
     .single();
 
   if (error) {
-    console.error("Error al obtener perfil:", error);
-    return res.status(500).json({ message: "Error obteniendo el perfil" });
+    debug.error = error;
+    console.error("Error al obtener perfil:", debug);
+    return res.status(500).json({ message: debug });
   }
 
   return res.status(200).json({ data });
