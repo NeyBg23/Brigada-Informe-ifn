@@ -189,6 +189,47 @@ router.get("/hoja-vida/:nombreArchivo", async (req, res) => {
     res.status(500).json({ error: "Error interno del servidor" });
   }
 });
+router.get("/perfil", verificarTokenExterno, async (req, res) => {
+  const userId = req.user.id;
+
+  const { data, error } = await supabase
+    .from("usuarios")
+    .select("*")
+    .eq("id", userId)
+    .single();
+
+  if (error) {
+    console.error("Error al obtener perfil:", error);
+    return res.status(500).json({ message: "Error obteniendo el perfil" });
+  }
+
+  return res.status(200).json({ data });
+});
+
+
+router.put("/perfil", verificarTokenExterno, async (req, res) => {
+  const userId = req.user.id;
+  const { descripcion, region, telefono } = req.body;
+
+  try {
+    const { data, error } = await supabase
+      .from("usuarios")
+      .update({ descripcion, region, telefono })
+      .eq("id", userId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Error al actualizar perfil:", error);
+      return res.status(400).json({ message: "Error actualizando el perfil" });
+    }
+
+    return res.status(200).json({ data });
+  } catch (err) {
+    console.error("Error inesperado:", err);
+    return res.status(500).json({ message: "Error actualizando el perfil" });
+  }
+});
 
 
 // Crear Empleados
