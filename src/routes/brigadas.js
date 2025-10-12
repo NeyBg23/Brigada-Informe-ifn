@@ -213,7 +213,7 @@ router.get("/perfil", verificarTokenExterno, async (req, res) => {
 
 
 router.put("/perfil", verificarTokenExterno, async (req, res) => {
-  const userId = req.user.id;
+  const userId = "a1dfb2fc-6d75-4d63-8983-755063f19ea8";
   const { descripcion, region, telefono } = req.body;
 
   try {
