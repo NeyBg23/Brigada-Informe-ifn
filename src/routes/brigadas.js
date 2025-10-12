@@ -243,7 +243,7 @@ router.post("/empleados", verificarTokenExterno, async (req, res) => {
   try {
     const {
       nombre_completo,
-      access_token,
+      dataToken,
       correo,
       cedula,
       telefono,
@@ -281,9 +281,9 @@ router.post("/empleados", verificarTokenExterno, async (req, res) => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${access_token}`,
+        Authorization: `Bearer ${dataToken.access_token}`,
       },
-      body: JSON.stringify({ uid: data, correo, contraseña }),
+      body: JSON.stringify({ uid: dataToken.user.id, correo, contraseña }),
     });
 
     const dataAuth = await resAuth.json();
