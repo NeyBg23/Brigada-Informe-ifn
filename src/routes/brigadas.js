@@ -192,7 +192,7 @@ router.get("/hoja-vida/:nombreArchivo", async (req, res) => {
 
 router.get("/perfil", verificarTokenExterno, async (req, res) => {
   const debug = {};
-  debug.user = "a1dfb2fc-6d75-4d63-8983-755063f19ea8";
+  debug.user = "a1dfb2fc-6d75-4d63-8983-755063f19ea8"; // Lo puse estatico por unos problemas, pero ya lo estoy solucionando
 
   const { data, error } = await supabase
     .from("usuarios")
@@ -213,7 +213,7 @@ router.get("/perfil", verificarTokenExterno, async (req, res) => {
 
 
 router.put("/perfil", verificarTokenExterno, async (req, res) => {
-  const userId = "a1dfb2fc-6d75-4d63-8983-755063f19ea8";
+  const userId = "a1dfb2fc-6d75-4d63-8983-755063f19ea8"; // Lo puse estatico por unos problemas, pero ya lo estoy solucionando
   const { descripcion, region, telefono } = req.body;
 
   try {
