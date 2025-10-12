@@ -279,7 +279,7 @@ router.post("/empleados", verificarTokenExterno, async (req, res) => {
     debug.data = dataToken;
 
     // Aquí llamo al backend de login para registrar en el Auth al usuario.
-    const resAuth = await fetch(`${process.env.AUTH_SERVICE_URL}/api/registrar`, {
+    const resAuth = await fetch(`${process.env.AUTH_SERVICE_URL}/auth/registrar`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
