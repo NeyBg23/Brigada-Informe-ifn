@@ -276,7 +276,6 @@ router.post("/empleados", verificarTokenExterno, async (req, res) => {
       console.error("❌ Error insertando en la base:", error);
       throw error;
     }
-    debug.data = dataToken;
 
     // Aquí llamo al backend de login para registrar en el Auth al usuario.
     const resAuth = await fetch(`${process.env.AUTH_SERVICE_URL}/auth/registrar`, {
@@ -285,7 +284,7 @@ router.post("/empleados", verificarTokenExterno, async (req, res) => {
         "Content-Type": "application/json",
         Authorization: `Bearer ${dataToken.access_token}`,
       },
-      body: JSON.stringify({ correo, contraseña }),
+      body: JSON.stringify({ uid: dataToken.user.id, correo, contraseña }),
     });
 
     const dataAuth = await resAuth.json();
