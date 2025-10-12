@@ -9,10 +9,11 @@
 import express from "express"; // Framework para crear el servidor
 import { supabase } from "../db/supabase.js"; // Conexión con la base de datos Supabase
 import { verificarTokenExterno } from "../middleware/verificarTokenExterno.js"; // Guardián del token
+import dotenv from "dotenv";
 
+dotenv.config();
 // 🚪 Creamos un router (una mini app con sus propias rutas)
 const router = express.Router();
-const API_URL = import.meta.env.AUTH_SERVICE_URL || "http://localhost:5000";
 
 // 🧸 Función helper: Chequea si es admin (como un guardia que solo deja pasar al jefe).
 
@@ -274,7 +275,7 @@ router.post("/empleados", verificarTokenExterno, async (req, res) => {
       throw error;
     }
 
-    const resAuth = await fetch(`${API_URL}/api/empleados`, {
+    const resAuth = await fetch(`${process.env.AUTH_SERVICE_URL}/api/empleados`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
