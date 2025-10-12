@@ -189,8 +189,10 @@ router.get("/hoja-vida/:nombreArchivo", async (req, res) => {
     res.status(500).json({ error: "Error interno del servidor" });
   }
 });
+
 router.get("/perfil", verificarTokenExterno, async (req, res) => {
   const debug = {};
+  /*
   const userId = req.user.id;
 
   const { data, error } = await supabase
@@ -204,8 +206,9 @@ router.get("/perfil", verificarTokenExterno, async (req, res) => {
     console.error("Error al obtener perfil:", debug);
     return res.status(500).json({ message: debug });
   }
+  */
 
-  return res.status(200).json({ data });
+  return res.status(200).json({ debug });
 });
 
 
