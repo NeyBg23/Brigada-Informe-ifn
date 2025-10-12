@@ -192,14 +192,16 @@ router.get("/hoja-vida/:nombreArchivo", async (req, res) => {
 
 router.get("/perfil", verificarTokenExterno, async (req, res) => {
   const debug = {};
-  /*
-  const userId = req.user.id;
+  debug.user = req.user.id;
 
   const { data, error } = await supabase
     .from("usuarios")
     .select("*")
     .eq("id", userId)
     .single();
+  debug.data = data;
+  
+  /*
 
   if (error) {
     debug.error = error;
