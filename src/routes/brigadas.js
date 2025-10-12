@@ -302,7 +302,7 @@ router.post("/empleados", verificarTokenExterno, async (req, res) => {
     
   } catch (err) {
     debug.error = err;
-    res.status(500).json({ error: "Error al crear empleado 😔"+debug });
+    res.status(500).json({ debug });
   }
 });
 
