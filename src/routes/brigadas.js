@@ -243,6 +243,7 @@ router.post("/empleados", verificarTokenExterno, async (req, res) => {
   try {
     const {
       nombre_completo,
+      access_token,
       correo,
       cedula,
       telefono,
