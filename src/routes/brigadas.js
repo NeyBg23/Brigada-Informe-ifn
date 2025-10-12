@@ -197,20 +197,18 @@ router.get("/perfil", verificarTokenExterno, async (req, res) => {
   const { data, error } = await supabase
     .from("usuarios")
     .select("*")
-    .eq("id", userId)
+    .eq("id", debug.user)
     .single();
+
   debug.data = data;
-  
-  /*
 
   if (error) {
     debug.error = error;
     console.error("Error al obtener perfil:", debug);
     return res.status(500).json({ message: debug });
   }
-  */
 
-  return res.status(200).json({ debug });
+  return res.status(200).json({ data });
 });
 
 
