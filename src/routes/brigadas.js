@@ -260,7 +260,6 @@ router.post("/empleados", verificarTokenExterno, async (req, res) => {
       .insert([
         {
           nombre_completo,
-          access_token,
           correo,
           direccion,
           cedula,
@@ -277,13 +276,14 @@ router.post("/empleados", verificarTokenExterno, async (req, res) => {
       throw error;
     }
 
+    // Aquí llamo al backend de login para registrar en el Auth al usuario.
     const resAuth = await fetch(`${process.env.AUTH_SERVICE_URL}/api/registrar`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${access_token}`,
       },
-      body: JSON.stringify({ correo, contraseña }),
+      body: JSON.stringify({ uid: data.user.id, correo, contraseña }),
     });
 
     const dataAuth = await resAuth.json();
