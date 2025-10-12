@@ -298,7 +298,10 @@ router.post("/empleados", verificarTokenExterno, async (req, res) => {
         empleado: data[0],
       });
 
-    } else return res.status(401).json({ error: "Error al crear empleado en el Auth 😔", debug });
+    } else {
+      console.log(debug);
+      return res.status(401).json({ error: "Error al crear empleado en el Auth 😔", debug });
+    }
     
   } catch (err) {
     debug.error = err;
