@@ -275,7 +275,7 @@ router.post("/empleados", verificarTokenExterno, async (req, res) => {
       throw error;
     }
 
-    const resAuth = await fetch(`${process.env.AUTH_SERVICE_URL}/api/empleados`, {
+    const resAuth = await fetch(`${process.env.AUTH_SERVICE_URL}/api/registrar`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -291,6 +291,7 @@ router.post("/empleados", verificarTokenExterno, async (req, res) => {
         mensaje: "Empleado creado ✅",
         empleado: data[0],
       });
+
     } else return res.status(401).json({ error: "Error al crear empleado en el Auth 😔", dataAuth });
     
   } catch (err) {
