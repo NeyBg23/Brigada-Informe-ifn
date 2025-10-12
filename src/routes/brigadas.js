@@ -12,7 +12,7 @@ import { verificarTokenExterno } from "../middleware/verificarTokenExterno.js"; 
 
 // 🚪 Creamos un router (una mini app con sus propias rutas)
 const router = express.Router();
-
+const API_URL = import.meta.env.AUTH_SERVICE_URL || "http://localhost:5000";
 
 // 🧸 Función helper: Chequea si es admin (como un guardia que solo deja pasar al jefe).
 
@@ -247,6 +247,8 @@ router.post("/empleados", verificarTokenExterno, async (req, res) => {
       telefono,
       region,
       descripcion,
+      direccion,
+      contraseña,
       hoja_vida_url, // ✅ ya viene directo del frontend (Subido a Storage)
     } = req.body;
 
@@ -257,6 +259,7 @@ router.post("/empleados", verificarTokenExterno, async (req, res) => {
         {
           nombre_completo,
           correo,
+          direccion,
           cedula,
           telefono,
           region,
@@ -271,10 +274,24 @@ router.post("/empleados", verificarTokenExterno, async (req, res) => {
       throw error;
     }
 
-    res.json({
-      mensaje: "Empleado creado ✅",
-      empleado: data[0],
+    const resAuth = await fetch(`${API_URL}/api/empleados`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ correo, contraseña }),
     });
+
+    const dataAuth = await resAuth.json();
+
+    if (resAuth.ok) {
+      res.json({
+        mensaje: "Empleado creado ✅",
+        empleado: data[0],
+      });
+    } else return res.status(401).json({ error: "Error al crear empleado en el Auth 😔", dataAuth });
+    
   } catch (err) {
     console.error("🔥 Error en /empleados:", err);
     res.status(500).json({ error: "Error al crear empleado 😔" });
