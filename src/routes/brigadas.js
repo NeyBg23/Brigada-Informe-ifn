@@ -129,7 +129,7 @@ router.post("/usuarios", verificarTokenExterno, esAdmin, async (req, res) => {
   }
 });
 
-
+// a
 // 📍 GET /api/brigadas - Lista brigadas.
 router.get("/brigadas", verificarTokenExterno, async (req, res) => {
   try {
