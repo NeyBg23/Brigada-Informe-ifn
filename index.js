@@ -13,7 +13,7 @@ app.use(cors({
     "https://react-vercel-deploy-brown.vercel.app",
     "https://brigada-informe-ifn.vercel.app",   // tu backend en Vercel
   ],
-  methods: ["GET", "POST", "OPTIONS"],
+  methods: ["GET", "POST", "PUT", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"], // ✅ importante
   credentials: true,
 }));
