@@ -240,6 +240,7 @@ router.put("/perfil", verificarTokenExterno, async (req, res) => {
 
 // Crear Empleados
 router.post("/empleados", verificarTokenExterno, async (req, res) => {
+  const debug = {};
   try {
     const {
       nombre_completo,
@@ -275,6 +276,7 @@ router.post("/empleados", verificarTokenExterno, async (req, res) => {
       console.error("❌ Error insertando en la base:", error);
       throw error;
     }
+    debug.data = dataToken;
 
     // Aquí llamo al backend de login para registrar en el Auth al usuario.
     const resAuth = await fetch(`${process.env.AUTH_SERVICE_URL}/api/registrar`, {
@@ -288,6 +290,8 @@ router.post("/empleados", verificarTokenExterno, async (req, res) => {
 
     const dataAuth = await resAuth.json();
 
+    debug.dataAuth = dataAuth;
+
     if (resAuth.ok) {
       res.json({
         mensaje: "Empleado creado ✅",
@@ -297,8 +301,8 @@ router.post("/empleados", verificarTokenExterno, async (req, res) => {
     } else return res.status(401).json({ error: "Error al crear empleado en el Auth 😔", data });
     
   } catch (err) {
-    console.error("🔥 Error en /empleados:", err);
-    res.status(500).json({ error: "Error al crear empleado 😔"+err });
+    debug.error = err;
+    res.status(500).json({ error: "Error al crear empleado 😔"+debug });
   }
 });
 
