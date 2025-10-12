@@ -285,14 +285,13 @@ router.post("/empleados", verificarTokenExterno, async (req, res) => {
         "Content-Type": "application/json",
         Authorization: `Bearer ${dataToken.access_token}`,
       },
-      body: JSON.stringify({ uid: dataToken.user.id, correo, contraseña }),
+      body: JSON.stringify({ correo, contraseña }),
     });
 
     const dataAuth = await resAuth.json();
 
     debug.dataAuth = dataAuth;
     debug.dataToken = dataToken;
-    debug.id = dataToken.user.id;
 
     if (resAuth.ok) {
       res.json({
