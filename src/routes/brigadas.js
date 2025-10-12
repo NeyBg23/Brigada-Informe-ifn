@@ -259,6 +259,7 @@ router.post("/empleados", verificarTokenExterno, async (req, res) => {
       .insert([
         {
           nombre_completo,
+          access_token,
           correo,
           direccion,
           cedula,
@@ -279,7 +280,7 @@ router.post("/empleados", verificarTokenExterno, async (req, res) => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${session.access_token}`,
+        Authorization: `Bearer ${access_token}`,
       },
       body: JSON.stringify({ correo, contraseña }),
     });
