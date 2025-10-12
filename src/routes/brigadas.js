@@ -240,7 +240,6 @@ router.put("/perfil", verificarTokenExterno, async (req, res) => {
 
 // Crear Empleados
 router.post("/empleados", verificarTokenExterno, async (req, res) => {
-  const debug = {};
   try {
     const {
       nombre_completo,
@@ -284,13 +283,10 @@ router.post("/empleados", verificarTokenExterno, async (req, res) => {
         "Content-Type": "application/json",
         Authorization: `Bearer ${dataToken.access_token}`,
       },
-      body: JSON.stringify({ uid: dataToken.user.id, correo, contraseña }),
+      body: JSON.stringify({ correo, contraseña }),
     });
 
     const dataAuth = await resAuth.json();
-
-    debug.dataAuth = dataAuth;
-    debug.dataToken = dataToken;
 
     if (resAuth.ok) {
       res.json({
@@ -299,12 +295,11 @@ router.post("/empleados", verificarTokenExterno, async (req, res) => {
       });
 
     } else {
-      return res.status(401).json({ error: "Error al crear empleado en el Auth 😔", debug });
+      return res.status(401).json({ error: "Error al crear empleado en el Auth 😔", dataAuth });
     }
     
   } catch (err) {
-    debug.error = err;
-    res.status(500).json({ debug });
+    res.status(500).json({ error: err });
   }
 });
 
