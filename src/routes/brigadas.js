@@ -10,6 +10,7 @@ import express from "express"; // Framework para crear el servidor
 import { supabase } from "../db/supabase.js"; // Conexión con la base de datos Supabase
 import { verificarTokenExterno } from "../middleware/verificarTokenExterno.js"; // Guardián del token
 import dotenv from "dotenv";
+import { crearUsuarioEnAuth } from "../services/authExternalService.js";  // Servicio para crear usuarios en el Auth externo
 
 dotenv.config();
 // 🚪 Creamos un router (una mini app con sus propias rutas)
@@ -238,7 +239,7 @@ router.put("/perfil", verificarTokenExterno, async (req, res) => {
 });
 
 
-// Crear Empleados
+// 📍 POST /api/empleados - Crear empleado sincronizado con servicio Auth
 router.post("/empleados", verificarTokenExterno, async (req, res) => {
   try {
     const {
@@ -254,7 +255,12 @@ router.post("/empleados", verificarTokenExterno, async (req, res) => {
       hoja_vida_url, // ✅ ya viene directo del frontend (Subido a Storage)
     } = req.body;
 
-    // 👷‍♂️ Insertar en la base de datos
+    // 🔐 1️⃣ Crear usuario en el servicio externo de autenticación (Auth)
+    console.log("🧠 Registrando usuario en servicio Auth...");
+    const userAuth = await crearUsuarioEnAuth(correo, contraseña);
+    console.log("✅ Usuario creado en Auth:", userAuth.email);
+
+    // 🧱 2️⃣ Insertar en la base de datos local
     const { data, error } = await supabase
       .from("usuarios")
       .insert([
@@ -272,36 +278,42 @@ router.post("/empleados", verificarTokenExterno, async (req, res) => {
       .select();
 
     if (error) {
-      console.error("❌ Error insertando en la base:", error);
+      console.error("❌ Error insertando en la base local:", error);
       throw error;
     }
 
-    // Aquí llamo al backend de login para registrar en el Auth al usuario.
-    const resAuth = await fetch(`${process.env.AUTH_SERVICE_URL}/auth/registrar`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${dataToken.access_token}`,
-      },
-      body: JSON.stringify({ correo, contraseña }),
+    // 🎯 3️⃣ Responder al cliente (sin duplicar llamadas al Auth)
+    res.status(201).json({
+      mensaje: "Empleado creado correctamente ✅",
+      userAuth,
+      userLocal: data[0],
     });
 
-    const dataAuth = await resAuth.json();
-
-    if (resAuth.ok) {
-      res.json({
-        mensaje: "Empleado creado ✅",
-        empleado: data[0],
-      });
-
-    } else {
-      return res.status(401).json({ error: "Error al crear empleado en el Auth 😔", dataAuth });
-    }
-    
   } catch (err) {
-    res.status(500).json({ error: err });
+    console.error("💥 Error general en creación de empleado:", err);
+    res.status(500).json({ error: err.message || "Error en el servidor al crear empleado" });
   }
 });
+
+
+// 📍 GET /api/empleados/:idempleado - Consultar detalle de empleado
+router.get("/empleados/:idempleado", verificarTokenExterno, async (req, res) => {
+  try {
+    const { idempleado } = req.params;
+    const { data, error } = await supabase
+      .from("usuarios")
+      .select("*")
+      .eq("id", idempleado)
+      .maybeSingle();
+
+    if (error) throw error;
+    res.json({ data });
+  } catch (err) {
+    console.error("❌ Error al obtener empleado:", err);
+    res.status(500).json({ error: "Error al obtener empleado 😔" });
+  }
+});
+
 
 
 router.get("/empleados/:idempleado", verificarTokenExterno, async (req, res) => {
