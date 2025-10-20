@@ -239,32 +239,44 @@ router.put("/perfil", verificarTokenExterno, async (req, res) => {
 });
 
 
-// 📍 POST /api/empleados - Crear nuevo empleado 
+// 📍 POST /api/empleados - Crear nuevo empleado
+// Este endpoint realiza los siguientes pasos:
+// 1️⃣ Valida los campos obligatorios
+// 2️⃣ Crea el usuario en el servicio de Auth externo (IAM)
+// 3️⃣ Inserta el registro en la tabla 'usuarios' de Supabase
+// 4️⃣ Si falla la insert en Supabase, hace rollback eliminando el usuario en Auth
+// 5️⃣ Devuelve la respuesta final al frontend
 router.post("/empleados", verificarTokenExterno, async (req, res) => {
+  // Desestructuramos los campos enviados desde el frontend
+  const {
+    nombre_completo,
+    correo,
+    cedula,
+    telefono,
+    region,
+    descripcion,
+    direccion,
+    contraseña,
+    hoja_vida_url, // ✅ ya viene subido directamente a Storage
+  } = req.body;
+
+  // 🔹 Validación de campos obligatorios
+  if (!correo || !contraseña || !nombre_completo) {
+    return res.status(400).json({
+      error: "Faltan datos obligatorios: nombre, correo o contraseña",
+    });
+  }
+
+  let nuevoUsuarioAuth = null; // Variable para almacenar el usuario creado en Auth
+
   try {
-    const {
-      nombre_completo,
-      correo,
-      cedula,
-      telefono,
-      region,
-      descripcion,
-      direccion,
-      contraseña,
-      hoja_vida_url, // ✅ ya viene directo del frontend (Subido a Storage)
-    } = req.body;
-
-    // 🧩 1️⃣ Validar campos básicos
-    if (!correo || !contraseña || !nombre_completo) {
-      return res.status(400).json({ error: "Faltan datos obligatorios: nombre, correo o contraseña" });
-    }
-
-    // 🧠 2️⃣ Registrar usuario en el servicio de autenticación (IAM)
+    // 🧠 1️⃣ Crear usuario en Auth externo
     console.log("🧠 Registrando usuario en servicio Auth externo...");
-    const nuevoUsuarioAuth = await crearUsuarioEnAuth(correo, contraseña);
+    nuevoUsuarioAuth = await crearUsuarioEnAuth(correo, contraseña);
+    const authId = nuevoUsuarioAuth?.id || null;
     console.log("✅ Usuario creado en Auth:", nuevoUsuarioAuth?.email || correo);
 
-    // 🧱 3️⃣ Insertar en tabla 'usuarios' de Supabase (proyecto Brigada)
+    // 🧱 2️⃣ Insertar el usuario en la tabla 'usuarios' de Supabase
     const { data, error } = await supabase
       .from("usuarios")
       .insert([
@@ -277,28 +289,45 @@ router.post("/empleados", verificarTokenExterno, async (req, res) => {
           region,
           descripcion,
           hoja_vida_url,
-          auth_id: nuevoUsuarioAuth?.id || null, // 🔗 Guardamos el id del Auth
+          auth_id: authId, // 🔗 Guardamos el ID del usuario en Auth externo
         },
       ])
       .select();
 
+    // 🔹 Manejo de error en la insert de Supabase
     if (error) {
-      console.error("❌ Error insertando en la base de datos:", error);
+      console.error("❌ Error insertando en Supabase:", error);
+
+      // 🔹 Rollback: eliminar usuario en Auth externo si la insert falla
+      if (authId) {
+        try {
+          await fetch(`${AUTH_SERVICE_URL}/auth/${authId}`, { method: "DELETE" });
+          console.log("Rollback: usuario eliminado en Auth externo:", authId);
+        } catch (rollbackErr) {
+          console.error("⚠️ Error haciendo rollback en Auth externo:", rollbackErr);
+        }
+      }
+
+      // Lanzamos el error para que sea capturado en catch
       throw error;
     }
 
-    // ✅ 4️⃣ Respuesta final
+    // ✅ 3️⃣ Respuesta exitosa al frontend
     res.status(201).json({
       mensaje: "Empleado creado exitosamente ✅",
       empleado: data[0],
       authUser: nuevoUsuarioAuth,
     });
-
   } catch (err) {
-    console.error("🔥 Error en creación de empleado:", err.message);
-    res.status(500).json({ error: "Error al crear empleado 😔", detalle: err.message });
+    // 🔹 Captura de cualquier error inesperado
+    console.error("🔥 Error en creación de empleado:", err.message || err);
+    res.status(500).json({
+      error: "Error al crear empleado 😔",
+      detalle: err.message || err,
+    });
   }
 });
+
 
 
 
