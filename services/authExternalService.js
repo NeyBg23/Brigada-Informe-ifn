@@ -1,32 +1,39 @@
-// src/services/authExternalService.js
+// 📂 src/services/authExternalService.js
+// --------------------------------------------------
+// Servicio que maneja comunicación con el backend de autenticación externo
+// (iam-auten-verifi-service-ifn)
+
 import fetch from "node-fetch";
 
+const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL || "https://iam-auten-verifi-service-ifn.vercel.app";
+
 /**
- * Servicio para comunicar el backend principal con el microservicio Auth (iam-autenVerifi-service-ifn)
- * Permite crear usuarios en el sistema de autenticación gestionado por Supabase.
- *
- * @param {string} correo - Correo electrónico del usuario a crear.
- * @param {string} contraseña - Contraseña del usuario a crear.
- * @returns {Promise<Object>} - Datos del usuario creado o error.
+ * Crea un usuario en el servicio Auth externo
+ * @param {string} correo - Correo del usuario
+ * @param {string} contraseña - Contraseña del usuario
+ * @returns {Promise<Object>} Usuario creado o error
  */
-export async function crearUsuarioEnAuth(correo, contraseña) {  // Nota: usamos 'contraseña' para mantener consistencia con el idioma
+export async function crearUsuarioEnAuth(correo, contraseña) {
   try {
-    const resp = await fetch("https://iam-auten-verifi-service-ifn.vercel.app/auth/registrar", {  // URL del servicio Auth
+    const response = await fetch(`${AUTH_SERVICE_URL}/auth/registrar`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ correo, password: contraseña }),
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ correo, contraseña }),
     });
 
-    const data = await resp.json();
+    const data = await response.json();
 
-    if (!resp.ok) {
+    if (!response.ok) {
       console.error("❌ Error creando usuario en Auth:", data);
-      throw new Error(data.error || "Error en servicio Auth");
+      throw new Error(data.error || "Error creando usuario en Auth");
     }
 
+    console.log("✅ Usuario creado en servicio Auth:", data.user?.email || correo);
     return data.user;
   } catch (err) {
-    console.error("💥 Error en crearUsuarioEnAuth:", err);
+    console.error("🔥 Error conexión Auth:", err.message);
     throw err;
   }
 }
