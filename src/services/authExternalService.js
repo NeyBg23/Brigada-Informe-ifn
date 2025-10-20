@@ -4,6 +4,9 @@
 // (iam-auten-verifi-service-ifn)
 
 import fetch from "node-fetch";
+import dotenv from "dotenv";
+dotenv.config();
+
 
 const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL || "https://iam-auten-verifi-service-ifn.vercel.app";
 
