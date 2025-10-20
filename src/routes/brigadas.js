@@ -239,12 +239,11 @@ router.put("/perfil", verificarTokenExterno, async (req, res) => {
 });
 
 
-// 📍 POST /api/empleados - Crear empleado sincronizado con servicio Auth
+// 📍 POST /api/empleados - Crear nuevo empleado 
 router.post("/empleados", verificarTokenExterno, async (req, res) => {
   try {
     const {
       nombre_completo,
-      dataToken,
       correo,
       cedula,
       telefono,
@@ -255,12 +254,17 @@ router.post("/empleados", verificarTokenExterno, async (req, res) => {
       hoja_vida_url, // ✅ ya viene directo del frontend (Subido a Storage)
     } = req.body;
 
-    // 🔐 1️⃣ Crear usuario en el servicio externo de autenticación (Auth)
-    console.log("🧠 Registrando usuario en servicio Auth...");
-    const userAuth = await crearUsuarioEnAuth(correo, contraseña);
-    console.log("✅ Usuario creado en Auth:", userAuth.email);
+    // 🧩 1️⃣ Validar campos básicos
+    if (!correo || !contraseña || !nombre_completo) {
+      return res.status(400).json({ error: "Faltan datos obligatorios: nombre, correo o contraseña" });
+    }
 
-    // 🧱 2️⃣ Insertar en la base de datos local
+    // 🧠 2️⃣ Registrar usuario en el servicio de autenticación (IAM)
+    console.log("🧠 Registrando usuario en servicio Auth externo...");
+    const nuevoUsuarioAuth = await crearUsuarioEnAuth(correo, contraseña);
+    console.log("✅ Usuario creado en Auth:", nuevoUsuarioAuth?.email || correo);
+
+    // 🧱 3️⃣ Insertar en tabla 'usuarios' de Supabase (proyecto Brigada)
     const { data, error } = await supabase
       .from("usuarios")
       .insert([
@@ -273,27 +277,29 @@ router.post("/empleados", verificarTokenExterno, async (req, res) => {
           region,
           descripcion,
           hoja_vida_url,
+          auth_id: nuevoUsuarioAuth?.id || null, // 🔗 Guardamos el id del Auth
         },
       ])
       .select();
 
     if (error) {
-      console.error("❌ Error insertando en la base local:", error);
+      console.error("❌ Error insertando en la base de datos:", error);
       throw error;
     }
 
-    // 🎯 3️⃣ Responder al cliente (sin duplicar llamadas al Auth)
+    // ✅ 4️⃣ Respuesta final
     res.status(201).json({
-      mensaje: "Empleado creado correctamente ✅",
-      userAuth,
-      userLocal: data[0],
+      mensaje: "Empleado creado exitosamente ✅",
+      empleado: data[0],
+      authUser: nuevoUsuarioAuth,
     });
 
   } catch (err) {
-    console.error("💥 Error general en creación de empleado:", err);
-    res.status(500).json({ error: err.message || "Error en el servidor al crear empleado" });
+    console.error("🔥 Error en creación de empleado:", err.message);
+    res.status(500).json({ error: "Error al crear empleado 😔", detalle: err.message });
   }
 });
+
 
 
 // 📍 GET /api/empleados/:idempleado - Consultar detalle de empleado
