@@ -376,6 +376,17 @@ router.get("/empleados", verificarTokenExterno, async (req, res) => {
     res.status(500).json({ error: "Error al obtener empleados 😔" });
   }
 });
+router.get("/empleados/:idempleado", verificarTokenExterno, async (req, res) => {
+  try {
+    const { idempleado } = req.params;
+    const { data, error } = await supabase.from("usuarios").select("*").eq("id", idempleado).maybeSingle();
+
+    if (error) throw error;
+    res.json({ data });
+  } catch (err) {
+    res.status(500).json({ error: "Error al obtener empleado 😔" });
+  } 
+});
 
 router.get("/conglomerados", verificarTokenExterno, async (req, res) => {
   try {
