@@ -385,6 +385,20 @@ router.get("/conglomerados", verificarTokenExterno, async (req, res) => {
   }
 });
 
+router.get("/conglomerados/:idconglomerado", verificarTokenExterno, async (req, res) => {
+  try {
+    const { idconglomerado } = req.params;
+    const { data, error } = await supabase.from("conglomerados").select("*").eq("id", idconglomerado).maybeSingle();
+
+    if (error) throw error;
+
+    res.json({ data });
+
+  } catch (err) {
+    res.status(500).json({ error: "Error al obtener conglomerado 😔"});
+  }
+});
+
 /**
  * POST /api/conglomerados/:id/asignar-brigada
  * Asigna una brigada a un conglomerado si cumple requisitos mínimos.
