@@ -394,6 +394,30 @@ router.get("/hoja-vida/:nombreArchivo", async (req, res) => {
   }
 });
 
+router.put("/perfil", verificarTokenExterno, async (req, res) => {
+  const userId = "a1dfb2fc-6d75-4d63-8983-755063f19ea8"; // Lo puse estatico por unos problemas, pero ya lo estoy solucionando
+  const { descripcion, region, telefono } = req.body;
+
+  try {
+    const { data, error } = await supabase
+      .from("usuarios")
+      .update({ descripcion, region, telefono })
+      .eq("id", userId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Error al actualizar perfil:", error);
+      return res.status(400).json({ message: "Error actualizando el perfil" });
+    }
+
+    return res.status(200).json({ data });
+  } catch (err) {
+    console.error("Error inesperado:", err);
+    return res.status(500).json({ message: "Error actualizando el perfil" });
+  }
+});
+
 router.get("/empleados", verificarTokenExterno, async (req, res) => {
   try {
     const { data, error } = await supabase.from("usuarios").select("*");
