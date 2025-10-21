@@ -1,7 +1,7 @@
 // 📂 src/routes/brigadas.js
 // ----------------------------------------------------------
-// Rutas para gestionar brigadas, usuarios y asignaciones.
-// Requiere token válido y roles adecuados.
+// Rutas para gestionar brigadas, usuarios/empleados y asignaciones.
+// Requiere token válido y roles adecuados (admin para ciertas operaciones).
 
 import express from "express";
 import { supabase } from "../db/supabase.js";
@@ -11,31 +11,39 @@ import dotenv from "dotenv";
 dotenv.config();
 const router = express.Router();
 
-// Helper: valida que el usuario sea admin
+/**
+ * Middleware esAdmin:
+ * Verifica que el usuario autenticado tenga rol "admin" en la tabla usuarios.
+ */
 async function esAdmin(req, res, next) {
   try {
     const email = req.user.correo || req.user.email;
-    if (!email) return res.status(403).json({ error: "Token inválido o sin correo" });
+    if (!email) {
+      return res.status(403).json({ error: "Token inválido o sin correo" });
+    }
 
     const { data, error } = await supabase
       .from("usuarios")
       .select("rol")
       .eq("correo", email)
       .maybeSingle();
-
     if (error) throw error;
+
     if (!data || data.rol !== "admin") {
       return res.status(403).json({ error: "Solo admins pueden hacer esto" });
     }
-
     next();
   } catch (err) {
-    console.error("Error validando rol:", err);
+    console.error("Error validando rol de usuario:", err);
     res.status(500).json({ error: "Error interno en validación de rol" });
   }
 }
 
-// GET /api/usuarios – Listar todos los usuarios
+/**
+ * GET /api/usuarios
+ * Listar todos los usuarios.
+ * Acceso: cualquier usuario autenticado.
+ */
 router.get("/usuarios", verificarTokenExterno, async (req, res) => {
   try {
     const { data, error } = await supabase.from("usuarios").select("*");
@@ -47,7 +55,14 @@ router.get("/usuarios", verificarTokenExterno, async (req, res) => {
   }
 });
 
-// POST /api/usuarios – Crear empleado (solo admin)
+/**
+ * POST /api/usuarios
+ * Crear un nuevo usuario/empleado.
+ * Acceso: solo admin.
+ * Body JSON:
+ * { nombre_completo, correo, cargo, region, telefono, fecha_ingreso, descripcion, rol? }
+ * rol por defecto: "brigadista"
+ */
 router.post("/usuarios", verificarTokenExterno, esAdmin, async (req, res) => {
   try {
     const {
@@ -60,8 +75,9 @@ router.post("/usuarios", verificarTokenExterno, esAdmin, async (req, res) => {
       descripcion,
       rol = "brigadista"
     } = req.body;
-    const foto_url = "url_de_foto";      // TODO: reemplazar con upload real
-    const hoja_vida_url = "url_de_pdf";  // TODO: reemplazar con upload real
+    // TODO: reemplazar con lógica de upload real
+    const foto_url = "url_de_foto";
+    const hoja_vida_url = "url_de_pdf";
 
     const { data, error } = await supabase
       .from("usuarios")
@@ -81,50 +97,101 @@ router.post("/usuarios", verificarTokenExterno, esAdmin, async (req, res) => {
       ])
       .select()
       .single();
-
     if (error) throw error;
-    res.status(201).json({ mensaje: "Empleado creado correctamente", usuario: data });
+
+    res.status(201).json({
+      mensaje: "Empleado creado correctamente",
+      usuario: data
+    });
   } catch (err) {
-    console.error("Error creando usuario:", err);
+    console.error("Error en POST /api/usuarios:", err);
+    res.status(500).json({ error: "Error al crear empleado" });
+  }
+});
+
+/**
+ * POST /api/empleados
+ * Mismo comportamiento que POST /api/usuarios para compatibilidad con frontend.
+ * Acceso: solo admin.
+ */
+router.post("/empleados", verificarTokenExterno, esAdmin, async (req, res) => {
+  try {
+    const {
+      nombre_completo,
+      correo,
+      cargo,
+      region,
+      telefono,
+      fecha_ingreso,
+      descripcion,
+      rol = "brigadista"
+    } = req.body;
+    const foto_url = "url_de_foto";
+    const hoja_vida_url = "url_de_pdf";
+
+    const { data, error } = await supabase
+      .from("usuarios")
+      .insert([
+        {
+          nombre_completo,
+          correo,
+          cargo,
+          region,
+          telefono,
+          fecha_ingreso,
+          descripcion,
+          rol,
+          foto_url,
+          hoja_vida_url
+        }
+      ])
+      .select()
+      .single();
+    if (error) throw error;
+
+    res.status(201).json({
+      mensaje: "Empleado creado correctamente",
+      usuario: data
+    });
+  } catch (err) {
+    console.error("Error en POST /api/empleados:", err);
     res.status(500).json({ error: "Error al crear empleado" });
   }
 });
 
 /**
  * PUT /api/usuarios/:id/rol
- * Cambia el rol de un usuario existente.
- * Sólo accesible por admins.
+ * Actualizar el rol de un usuario existente.
+ * Body JSON: { rol }
+ * Acceso: solo admin.
  */
-router.put(
-  "/usuarios/:id/rol",
-  verificarTokenExterno,
-  esAdmin,
-  async (req, res) => {
-    const { id } = req.params;
-    const { rol } = req.body;
-
-    if (!rol) {
-      return res.status(400).json({ error: "El campo 'rol' es obligatorio" });
-    }
-
-    try {
-      const { data, error } = await supabase
-        .from("usuarios")
-        .update({ rol })
-        .eq("id", id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      res.json({ mensaje: "Rol actualizado correctamente", usuario: data });
-    } catch (err) {
-      console.error("Error actualizando rol:", err);
-      res.status(500).json({ error: "Error interno al actualizar rol" });
-    }
+router.put("/usuarios/:id/rol", verificarTokenExterno, esAdmin, async (req, res) => {
+  const { id } = req.params;
+  const { rol } = req.body;
+  if (!rol) {
+    return res.status(400).json({ error: "El campo 'rol' es obligatorio" });
   }
-);
+  try {
+    const { data, error } = await supabase
+      .from("usuarios")
+      .update({ rol })
+      .eq("id", id)
+      .select()
+      .single();
+    if (error) throw error;
 
-// GET /api/brigadas – Listar brigadas
+    res.json({ mensaje: "Rol actualizado correctamente", usuario: data });
+  } catch (err) {
+    console.error("Error en PUT /api/usuarios/:id/rol:", err);
+    res.status(500).json({ error: "Error interno al actualizar rol" });
+  }
+});
+
+/**
+ * GET /api/brigadas
+ * Listar todas las brigadas.
+ * Acceso: cualquier usuario autenticado.
+ */
 router.get("/brigadas", verificarTokenExterno, async (req, res) => {
   try {
     const { data, error } = await supabase.from("brigadas").select("*");
@@ -136,7 +203,10 @@ router.get("/brigadas", verificarTokenExterno, async (req, res) => {
   }
 });
 
-// GET /api/brigadas/:idbrigada – Detalle de brigada
+/**
+ * GET /api/brigadas/:idbrigada
+ * Detalle de una brigada específica.
+ */
 router.get("/brigadas/:idbrigada", verificarTokenExterno, async (req, res) => {
   try {
     const { idbrigada } = req.params;
@@ -145,16 +215,19 @@ router.get("/brigadas/:idbrigada", verificarTokenExterno, async (req, res) => {
       .select("*")
       .eq("id", idbrigada)
       .maybeSingle();
-
     if (error) throw error;
     res.json({ data });
   } catch (err) {
-    console.error("Error obteniendo detalle brigada:", err);
+    console.error("Error en GET /api/brigadas/:idbrigada:", err);
     res.status(500).json({ error: "Error al obtener brigada" });
   }
 });
 
-// POST /api/brigadas/conformar – Conformar nueva brigada IFN
+/**
+ * POST /api/brigadas/conformar
+ * Crear una nueva brigada IFN con validación mínima.
+ * Body JSON: { nombre, jefe_id, botanico_id, tecnico_id, coinvestigadores_ids: [] }
+ */
 router.post("/brigadas/conformar", verificarTokenExterno, async (req, res) => {
   try {
     const { nombre, jefe_id, botanico_id, tecnico_id, coinvestigadores_ids } = req.body;
@@ -186,12 +259,15 @@ router.post("/brigadas/conformar", verificarTokenExterno, async (req, res) => {
 
     res.json({ brigada });
   } catch (err) {
-    console.error("Error conformando brigada:", err);
+    console.error("Error en POST /api/brigadas/conformar:", err);
     res.status(500).json({ error: "Error al conformar brigada" });
   }
 });
 
-// GET /api/brigadas/:id/validar – Verificar requisitos
+/**
+ * GET /api/brigadas/:id/validar
+ * Obtener última validación de requisitos de la brigada.
+ */
 router.get("/brigadas/:id/validar", verificarTokenExterno, async (req, res) => {
   try {
     const { id } = req.params;
@@ -202,16 +278,19 @@ router.get("/brigadas/:id/validar", verificarTokenExterno, async (req, res) => {
       .order("fecha_validacion", { ascending: false })
       .limit(1)
       .single();
-
     if (error) throw error;
     res.json(data);
   } catch (err) {
-    console.error("Error validando brigada:", err);
+    console.error("Error en GET /api/brigadas/:id/validar:", err);
     res.status(500).json({ error: "Error al validar brigada" });
   }
 });
 
-// POST /api/brigadas/:id/asignar-rol – Asignar rol en brigada
+/**
+ * POST /api/brigadas/:id/asignar-rol
+ * Asignar un rol dentro de la brigada (jefe, botanico, tecnico o coinvestigador).
+ * Body JSON: { usuario_id, rol }
+ */
 router.post("/brigadas/:id/asignar-rol", verificarTokenExterno, async (req, res) => {
   try {
     const { id } = req.params;
@@ -229,15 +308,18 @@ router.post("/brigadas/:id/asignar-rol", verificarTokenExterno, async (req, res)
     } else {
       return res.status(400).json({ error: "Rol inválido" });
     }
-
     res.json({ message: "Rol asignado" });
   } catch (err) {
-    console.error("Error asignando rol brigada:", err);
+    console.error("Error en POST /api/brigadas/:id/asignar-rol:", err);
     res.status(500).json({ error: "Error al asignar rol" });
   }
 });
 
-// POST /api/brigadas/:id/equipos – Asignar equipos
+/**
+ * POST /api/brigadas/:id/equipos
+ * Asignar equipos a la brigada.
+ * Body JSON: { equipos: [{ tipo_equipo, cantidad }, …] }
+ */
 router.post("/brigadas/:id/equipos", verificarTokenExterno, async (req, res) => {
   try {
     const { id } = req.params;
@@ -247,25 +329,35 @@ router.post("/brigadas/:id/equipos", verificarTokenExterno, async (req, res) => 
     if (error) throw error;
     res.json({ message: "Equipos asignados" });
   } catch (err) {
-    console.error("Error asignando equipos:", err);
+    console.error("Error en POST /api/brigadas/:id/equipos:", err);
     res.status(500).json({ error: "Error al asignar equipos" });
   }
 });
 
-// GET /api/brigadas/:id/equipos/validar – Comprobar equipos
+/**
+ * GET /api/brigadas/:id/equipos/validar
+ * Verifica si se asignaron todos los tipos de equipos del catálogo IFN.
+ */
 router.get("/brigadas/:id/equipos/validar", verificarTokenExterno, async (req, res) => {
   try {
     const { data: cat } = await supabase.from("catalogo_equipos_ifn").select("nombre");
-    const { data: asg } = await supabase.from("equipos_brigada").select("tipo_equipo").eq("brigada_id", req.params.id);
+    const { data: asg } = await supabase
+      .from("equipos_brigada")
+      .select("tipo_equipo")
+      .eq("brigada_id", req.params.id);
     const faltantes = cat.map(c => c.nombre).filter(n => !asg.some(a => a.tipo_equipo === n));
     res.json({ completos: faltantes.length === 0, faltantes });
   } catch (err) {
-    console.error("Error validando equipos:", err);
+    console.error("Error en GET /api/brigadas/:id/equipos/validar:", err);
     res.status(500).json({ error: "Error al validar equipos" });
   }
 });
 
-// POST /api/conglomerados/:id/planificar – Planificación previa
+/**
+ * POST /api/conglomerados/:id/planificar
+ * Actualiza planificación de asignación de conglomerados.
+ * Body JSON: datos de planificación según esquema.
+ */
 router.post("/conglomerados/:id/planificar", verificarTokenExterno, async (req, res) => {
   try {
     const { id } = req.params;
@@ -274,12 +366,16 @@ router.post("/conglomerados/:id/planificar", verificarTokenExterno, async (req, 
     if (error) throw error;
     res.json({ message: "Planificación guardada" });
   } catch (err) {
-    console.error("Error planificando asignación:", err);
+    console.error("Error en POST /api/conglomerados/:id/planificar:", err);
     res.status(500).json({ error: "Error al planificar asignación" });
   }
 });
 
-// POST /api/conglomerados/:id/asignar-brigada – Asignar brigada
+/**
+ * POST /api/conglomerados/:id/asignar-brigada
+ * Asigna una brigada a un conglomerado si cumple requisitos mínimos.
+ * Body JSON: { brigada_id }
+ */
 router.post("/conglomerados/:id/asignar-brigada", verificarTokenExterno, async (req, res) => {
   try {
     const { id } = req.params;
@@ -289,21 +385,23 @@ router.post("/conglomerados/:id/asignar-brigada", verificarTokenExterno, async (
       .select("cumple_requisitos_minimos")
       .eq("id", brigada_id)
       .single();
-
     if (!val.cumple_requisitos_minimos) {
       return res.status(400).json({ error: "Brigada no cumple requisitos" });
     }
-
     const { error } = await supabase
       .from("asignaciones_conglomerados")
       .insert({ conglomerado_id: id, brigada_id, fecha_asignacion: new Date() });
-
     if (error) throw error;
     res.json({ message: "Brigada asignada" });
   } catch (err) {
-    console.error("Error asignando brigada a conglomerado:", err);
+    console.error("Error en POST /api/conglomerados/:id/asignar-brigada:", err);
     res.status(500).json({ error: "Error al asignar brigada" });
   }
+});
+
+// Manejo final de rutas no definidas: devuelve JSON 404
+router.use((req, res) => {
+  res.status(404).json({ error: "Ruta no encontrada" });
 });
 
 export default router;
