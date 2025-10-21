@@ -39,21 +39,35 @@ async function esAdmin(req, res, next) {
   }
 }
 
+
 /**
- * GET /api/usuarios
- * Listar todos los usuarios.
+ * GET /api/usuarios/:id
+ * Obtener un solo usuario por su ID.
  * Acceso: cualquier usuario autenticado.
  */
-router.get("/usuarios", verificarTokenExterno, async (req, res) => {
-  try {
-    const { data, error } = await supabase.from("usuarios").select("*");
-    if (error) throw error;
-    res.json({ usuario: req.user, data });
-  } catch (err) {
-    console.error("Error obteniendo usuarios:", err);
-    res.status(500).json({ error: "Error al obtener usuarios" });
+router.get(
+  "/usuarios/:id",
+  verificarTokenExterno,
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { data, error } = await supabase
+        .from("usuarios")
+        .select("*")
+        .eq("id", id)
+        .maybeSingle();
+      if (error) throw error;
+      if (!data) {
+        return res.status(404).json({ error: "Usuario no encontrado" });
+      }
+      res.json({ data });
+    } catch (err) {
+      console.error("Error en GET /api/usuarios/:id:", err);
+      res.status(500).json({ error: "Error al obtener usuario" });
+    }
   }
-});
+);
+
 
 /**
  * POST /api/usuarios
