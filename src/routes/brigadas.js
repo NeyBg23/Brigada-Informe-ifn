@@ -7,7 +7,6 @@ import express from "express";
 import { supabase } from "../db/supabase.js";
 import { verificarTokenExterno } from "../middleware/verificarTokenExterno.js";
 import dotenv from "dotenv";
-import { crearUsuarioEnAuth } from "../services/authExternalService.js";
 
 dotenv.config();
 const router = express.Router();
@@ -31,6 +30,7 @@ async function esAdmin(req, res, next) {
 
     next();
   } catch (err) {
+    console.error("Error validando rol:", err);
     res.status(500).json({ error: "Error interno en validación de rol" });
   }
 }
@@ -42,6 +42,7 @@ router.get("/usuarios", verificarTokenExterno, async (req, res) => {
     if (error) throw error;
     res.json({ usuario: req.user, data });
   } catch (err) {
+    console.error("Error obteniendo usuarios:", err);
     res.status(500).json({ error: "Error al obtener usuarios" });
   }
 });
@@ -49,22 +50,79 @@ router.get("/usuarios", verificarTokenExterno, async (req, res) => {
 // POST /api/usuarios – Crear empleado (solo admin)
 router.post("/usuarios", verificarTokenExterno, esAdmin, async (req, res) => {
   try {
-    const { nombre_completo, correo, cargo, region, telefono, fecha_ingreso, descripcion, rol = "brigadista" } = req.body;
-    const foto_url = "url_de_foto";      // Reemplazar upload real
-    const hoja_vida_url = "url_de_pdf";  // Reemplazar upload real
+    const {
+      nombre_completo,
+      correo,
+      cargo,
+      region,
+      telefono,
+      fecha_ingreso,
+      descripcion,
+      rol = "brigadista"
+    } = req.body;
+    const foto_url = "url_de_foto";      // TODO: reemplazar con upload real
+    const hoja_vida_url = "url_de_pdf";  // TODO: reemplazar con upload real
 
     const { data, error } = await supabase
       .from("usuarios")
-      .insert([{ nombre_completo, correo, cargo, region, telefono, fecha_ingreso, descripcion, rol, foto_url, hoja_vida_url }])
+      .insert([
+        {
+          nombre_completo,
+          correo,
+          cargo,
+          region,
+          telefono,
+          fecha_ingreso,
+          descripcion,
+          rol,
+          foto_url,
+          hoja_vida_url
+        }
+      ])
       .select()
       .single();
 
     if (error) throw error;
     res.status(201).json({ mensaje: "Empleado creado correctamente", usuario: data });
   } catch (err) {
+    console.error("Error creando usuario:", err);
     res.status(500).json({ error: "Error al crear empleado" });
   }
 });
+
+/**
+ * PUT /api/usuarios/:id/rol
+ * Cambia el rol de un usuario existente.
+ * Sólo accesible por admins.
+ */
+router.put(
+  "/usuarios/:id/rol",
+  verificarTokenExterno,
+  esAdmin,
+  async (req, res) => {
+    const { id } = req.params;
+    const { rol } = req.body;
+
+    if (!rol) {
+      return res.status(400).json({ error: "El campo 'rol' es obligatorio" });
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from("usuarios")
+        .update({ rol })
+        .eq("id", id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      res.json({ mensaje: "Rol actualizado correctamente", usuario: data });
+    } catch (err) {
+      console.error("Error actualizando rol:", err);
+      res.status(500).json({ error: "Error interno al actualizar rol" });
+    }
+  }
+);
 
 // GET /api/brigadas – Listar brigadas
 router.get("/brigadas", verificarTokenExterno, async (req, res) => {
@@ -72,7 +130,8 @@ router.get("/brigadas", verificarTokenExterno, async (req, res) => {
     const { data, error } = await supabase.from("brigadas").select("*");
     if (error) throw error;
     res.json({ data });
-  } catch {
+  } catch (err) {
+    console.error("Error obteniendo brigadas:", err);
     res.status(500).json({ error: "Error al obtener brigadas" });
   }
 });
@@ -89,7 +148,8 @@ router.get("/brigadas/:idbrigada", verificarTokenExterno, async (req, res) => {
 
     if (error) throw error;
     res.json({ data });
-  } catch {
+  } catch (err) {
+    console.error("Error obteniendo detalle brigada:", err);
     res.status(500).json({ error: "Error al obtener brigada" });
   }
 });
@@ -126,6 +186,7 @@ router.post("/brigadas/conformar", verificarTokenExterno, async (req, res) => {
 
     res.json({ brigada });
   } catch (err) {
+    console.error("Error conformando brigada:", err);
     res.status(500).json({ error: "Error al conformar brigada" });
   }
 });
@@ -141,9 +202,11 @@ router.get("/brigadas/:id/validar", verificarTokenExterno, async (req, res) => {
       .order("fecha_validacion", { ascending: false })
       .limit(1)
       .single();
+
     if (error) throw error;
     res.json(data);
-  } catch {
+  } catch (err) {
+    console.error("Error validando brigada:", err);
     res.status(500).json({ error: "Error al validar brigada" });
   }
 });
@@ -158,6 +221,7 @@ router.post("/brigadas/:id/asignar-rol", verificarTokenExterno, async (req, res)
       botanico: "botanico_id",
       tecnico: "tecnico_auxiliar_id"
     };
+
     if (rol === "coinvestigador") {
       await supabase.from("brigada_brigadistas").insert({ brigada_id: id, usuario_id });
     } else if (colMap[rol]) {
@@ -165,8 +229,10 @@ router.post("/brigadas/:id/asignar-rol", verificarTokenExterno, async (req, res)
     } else {
       return res.status(400).json({ error: "Rol inválido" });
     }
+
     res.json({ message: "Rol asignado" });
-  } catch {
+  } catch (err) {
+    console.error("Error asignando rol brigada:", err);
     res.status(500).json({ error: "Error al asignar rol" });
   }
 });
@@ -180,7 +246,8 @@ router.post("/brigadas/:id/equipos", verificarTokenExterno, async (req, res) => 
     const { error } = await supabase.from("equipos_brigada").insert(inserts);
     if (error) throw error;
     res.json({ message: "Equipos asignados" });
-  } catch {
+  } catch (err) {
+    console.error("Error asignando equipos:", err);
     res.status(500).json({ error: "Error al asignar equipos" });
   }
 });
@@ -192,7 +259,8 @@ router.get("/brigadas/:id/equipos/validar", verificarTokenExterno, async (req, r
     const { data: asg } = await supabase.from("equipos_brigada").select("tipo_equipo").eq("brigada_id", req.params.id);
     const faltantes = cat.map(c => c.nombre).filter(n => !asg.some(a => a.tipo_equipo === n));
     res.json({ completos: faltantes.length === 0, faltantes });
-  } catch {
+  } catch (err) {
+    console.error("Error validando equipos:", err);
     res.status(500).json({ error: "Error al validar equipos" });
   }
 });
@@ -205,7 +273,8 @@ router.post("/conglomerados/:id/planificar", verificarTokenExterno, async (req, 
     const { error } = await supabase.from("asignaciones_conglomerados").update(datos).eq("id", id);
     if (error) throw error;
     res.json({ message: "Planificación guardada" });
-  } catch {
+  } catch (err) {
+    console.error("Error planificando asignación:", err);
     res.status(500).json({ error: "Error al planificar asignación" });
   }
 });
@@ -215,14 +284,24 @@ router.post("/conglomerados/:id/asignar-brigada", verificarTokenExterno, async (
   try {
     const { id } = req.params;
     const { brigada_id } = req.body;
-    const { data: val } = await supabase.from("brigadas").select("cumple_requisitos_minimos").eq("id", brigada_id).single();
+    const { data: val } = await supabase
+      .from("brigadas")
+      .select("cumple_requisitos_minimos")
+      .eq("id", brigada_id)
+      .single();
+
     if (!val.cumple_requisitos_minimos) {
       return res.status(400).json({ error: "Brigada no cumple requisitos" });
     }
-    const { error } = await supabase.from("asignaciones_conglomerados").insert({ conglomerado_id: id, brigada_id, fecha_asignacion: new Date() });
+
+    const { error } = await supabase
+      .from("asignaciones_conglomerados")
+      .insert({ conglomerado_id: id, brigada_id, fecha_asignacion: new Date() });
+
     if (error) throw error;
     res.json({ message: "Brigada asignada" });
-  } catch {
+  } catch (err) {
+    console.error("Error asignando brigada a conglomerado:", err);
     res.status(500).json({ error: "Error al asignar brigada" });
   }
 });
