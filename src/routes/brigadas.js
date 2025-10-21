@@ -393,6 +393,26 @@ router.get("/hoja-vida/:nombreArchivo", async (req, res) => {
     res.status(500).json({ error: "Error interno del servidor" });
   }
 });
+router.get("/perfil", verificarTokenExterno, async (req, res) => {
+  const debug = {};
+  debug.user = "a1dfb2fc-6d75-4d63-8983-755063f19ea8"; // Lo puse estatico por unos problemas, pero ya lo estoy solucionando
+
+  const { data, error } = await supabase
+    .from("usuarios")
+    .select("*")
+    .eq("id", debug.user)
+    .single();
+    
+  debug.data = data;
+
+  if (error) {
+    debug.error = error;
+    console.error("Error al obtener perfil:", debug);
+    return res.status(500).json({ message: debug });
+  }
+
+  return res.status(200).json({ data });
+});
 
 router.put("/perfil", verificarTokenExterno, async (req, res) => {
   const userId = "a1dfb2fc-6d75-4d63-8983-755063f19ea8"; // Lo puse estatico por unos problemas, pero ya lo estoy solucionando
