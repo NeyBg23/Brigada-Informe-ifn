@@ -367,11 +367,16 @@ router.get("/brigadas/:id/equipos/validar", verificarTokenExterno, async (req, r
   }
 });
 
-/**
- * POST /api/conglomerados/:id/planificar
- * Actualiza planificación de asignación de conglomerados.
- * Body JSON: datos de planificación según esquema.
- */
+router.get("/empleados", verificarTokenExterno, async (req, res) => {
+  try {
+    const { data, error } = await supabase.from("usuarios").select("*");
+    if (error) throw error;
+    res.json({ data });
+  } catch (err) {
+    res.status(500).json({ error: "Error al obtener empleados 😔" });
+  }
+});
+
 router.get("/conglomerados", verificarTokenExterno, async (req, res) => {
   try {
     const { data, error } = await supabase.from("conglomerados").select("*");
