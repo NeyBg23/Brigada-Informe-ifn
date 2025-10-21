@@ -23,7 +23,6 @@ app.use(express.json());
 
 // Ruta de prueba
 app.get("/", (req, res) => {
-  console.log("HGolaaa")
   res.json({ message: "Brigada Service funcionando 🚀" });
 });
 
