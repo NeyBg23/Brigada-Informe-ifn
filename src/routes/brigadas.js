@@ -300,34 +300,336 @@ router.get("/brigadas/:id/validar", verificarTokenExterno, async (req, res) => {
   }
 });
 
+// ===============================================
+// ✅ ENDPOINTS ACTUALIZADOS PARA METODO INCREMENTAL
+// ===============================================
+
 /**
  * POST /api/brigadas/:id/asignar-rol
- * Asignar un rol dentro de la brigada (jefe, botanico, tecnico o coinvestigador).
- * Body JSON: { usuario_id, rol }
+ * ⭐ VERSIÓN MEJORADA - Asigna rol dentro de brigada con nueva estructura
+ * Body JSON: { usuario_id, rol_en_brigada }
+ * Roles válidos: 'jefe_brigada', 'botanico', 'tecnico_auxiliar', 'coinvestigador'
  */
 router.post("/brigadas/:id/asignar-rol", verificarTokenExterno, async (req, res) => {
   try {
     const { id } = req.params;
-    const { usuario_id, rol } = req.body;
-    const colMap = {
-      jefe: "jefe_brigada_id",
-      botanico: "botanico_id",
-      tecnico: "tecnico_auxiliar_id"
-    };
+    const { usuario_id, rol_en_brigada } = req.body;
 
-    if (rol === "coinvestigador") {
-      await supabase.from("brigada_brigadistas").insert({ brigada_id: id, usuario_id });
-    } else if (colMap[rol]) {
-      await supabase.from("brigadas").update({ [colMap[rol]]: usuario_id }).eq("id", id);
-    } else {
-      return res.status(400).json({ error: "Rol inválido" });
+    // Validar que el rol sea válido
+    const rolesValidos = ['jefe_brigada', 'botanico', 'tecnico_auxiliar', 'coinvestigador'];
+    if (!rolesValidos.includes(rol_en_brigada)) {
+      return res.status(400).json({
+        error: `Rol inválido. Roles válidos: ${rolesValidos.join(', ')}`
+      });
     }
-    res.json({ message: "Rol asignado" });
+
+    // Validar que la brigada exista
+    const { data: brigada, error: errBrigada } = await supabase
+      .from('brigadas')
+      .select('id')
+      .eq('id', id)
+      .single();
+
+    if (errBrigada || !brigada) {
+      return res.status(404).json({ error: 'Brigada no encontrada' });
+    }
+
+    // Validar que el usuario exista
+    const { data: usuario, error: errUsuario } = await supabase
+      .from('usuarios')
+      .select('id')
+      .eq('id', usuario_id)
+      .single();
+
+    if (errUsuario || !usuario) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+
+    // Insertar/actualizar en brigada_brigadistas con el nuevo rol
+    const { data: asignacion, error: errAsign } = await supabase
+      .from('brigada_brigadistas')
+      .upsert(
+        {
+          brigada_id: id,
+          usuario_id,
+          rol_en_brigada,
+          fecha_asignacion: new Date()
+        },
+        { onConflict: 'brigada_id,usuario_id' }
+      )
+      .select();
+
+    if (errAsign) throw errAsign;
+
+    res.json({
+      mensaje: `Rol "${rol_en_brigada}" asignado correctamente`,
+      asignacion: asignacion[0]
+    });
   } catch (err) {
     console.error("Error en POST /api/brigadas/:id/asignar-rol:", err);
     res.status(500).json({ error: "Error al asignar rol" });
   }
 });
+
+
+/**
+ * GET /api/brigadas/:id/miembros
+ * ⭐ NUEVO - Obtener todos los miembros de una brigada con sus roles
+ */
+router.get("/brigadas/:id/miembros", verificarTokenExterno, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const { data: miembros, error } = await supabase
+      .from('brigada_brigadistas')
+      .select(`
+        id,
+        rol_en_brigada,
+        fecha_asignacion,
+        usuarios:usuario_id (
+          id,
+          nombre_completo,
+          correo,
+          cargo,
+          telefono
+        )
+      `)
+      .eq('brigada_id', id);
+
+    if (error) throw error;
+
+    res.json({
+      brigada_id: id,
+      total_miembros: miembros.length,
+      miembros
+    });
+  } catch (err) {
+    console.error("Error en GET /api/brigadas/:id/miembros:", err);
+    res.status(500).json({ error: "Error al obtener miembros de brigada" });
+  }
+});
+
+
+/**
+ * GET /api/brigadas/:id/checklist-conformacion
+ * ⭐ NUEVO - Valida step-by-step si la brigada cumple con requisitos IFN
+ * Implementa el MÉTODO INCREMENTAL del manual IFN
+ */
+router.get(
+  '/brigadas/:id/checklist-conformacion',
+  verificarTokenExterno,
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+
+      // Paso 1: Obtener brigada
+      const { data: brigada, error: errBrigada } = await supabase
+        .from('brigadas')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (errBrigada || !brigada) {
+        return res.status(404).json({ error: 'Brigada no encontrada' });
+      }
+
+      // Paso 2: Contar miembros por rol desde brigada_brigadistas
+      const { data: jefe } = await supabase
+        .from('brigada_brigadistas')
+        .select('*')
+        .eq('brigada_id', id)
+        .eq('rol_en_brigada', 'jefe_brigada');
+
+      const { data: botanico } = await supabase
+        .from('brigada_brigadistas')
+        .select('*')
+        .eq('brigada_id', id)
+        .eq('rol_en_brigada', 'botanico');
+
+      const { data: tecnico } = await supabase
+        .from('brigada_brigadistas')
+        .select('*')
+        .eq('brigada_id', id)
+        .eq('rol_en_brigada', 'tecnico_auxiliar');
+
+      const { data: coinvestigadores } = await supabase
+        .from('brigada_brigadistas')
+        .select('*')
+        .eq('brigada_id', id)
+        .eq('rol_en_brigada', 'coinvestigador');
+
+      // Paso 3: Validar equipos asignados
+      const { data: equiposAsignados } = await supabase
+        .from('equipos_brigada')
+        .select('tipo_equipo')
+        .eq('brigada_id', id);
+
+      const { data: equiposCatalogo } = await supabase
+        .from('catalogo_equipos_ifn')
+        .select('nombre');
+
+      const equiposFaltantes = equiposCatalogo
+        .map((e) => e.nombre)
+        .filter((n) => !equiposAsignados.some((a) => a.tipo_equipo === n));
+
+      // Paso 4: Validar capacitación
+      const capacitacionCompletada = brigada.capacitacion_completada || false;
+
+      // Paso 5: Armar respuesta con checklist completo
+      const checklist = {
+        brigada_id: id,
+        nombre_brigada: brigada.nombre,
+        estado_conformacion: 'en_progreso',
+        validacion: {
+          jefe_brigada: {
+            requerido: true,
+            completado: jefe && jefe.length > 0,
+            cantidad: jefe ? jefe.length : 0,
+            detalles: jefe && jefe.length > 0 ? jefe : null
+          },
+          botanico: {
+            requerido: true,
+            completado: botanico && botanico.length > 0,
+            cantidad: botanico ? botanico.length : 0,
+            detalles: botanico && botanico.length > 0 ? botanico : null
+          },
+          tecnico_auxiliar: {
+            requerido: true,
+            completado: tecnico && tecnico.length > 0,
+            cantidad: tecnico ? tecnico.length : 0,
+            detalles: tecnico && tecnico.length > 0 ? tecnico : null
+          },
+          coinvestigadores: {
+            requerido: true,
+            cantidad_minima: 2,
+            completado: coinvestigadores && coinvestigadores.length >= 2,
+            cantidad: coinvestigadores ? coinvestigadores.length : 0,
+            detalles: coinvestigadores && coinvestigadores.length >= 2 ? coinvestigadores : null
+          },
+          equipos_ifn: {
+            requerido: true,
+            completado: equiposFaltantes.length === 0,
+            equipos_faltantes: equiposFaltantes,
+            total_catalogo: equiposCatalogo.length,
+            total_asignados: equiposAsignados ? equiposAsignados.length : 0
+          },
+          capacitacion: {
+            requerido: true,
+            completado: capacitacionCompletada
+          }
+        },
+        cumple_minimo: false,
+        errores: [],
+        advertencias: [],
+        acciones_pendientes: []
+      };
+
+      // Paso 6: Calcular cumplimiento mínimo
+      const reqs = checklist.validacion;
+      const cumpleMinimo =
+        reqs.jefe_brigada.completado &&
+        reqs.botanico.completado &&
+        reqs.tecnico_auxiliar.completado &&
+        reqs.coinvestigadores.completado &&
+        reqs.equipos_ifn.completado;
+
+      checklist.cumple_minimo = cumpleMinimo;
+
+      if (cumpleMinimo) {
+        checklist.estado_conformacion = 'conforme';
+      }
+
+      // Paso 7: Generar mensajes de error/advertencia/acciones
+      if (!reqs.jefe_brigada.completado) {
+        checklist.errores.push('❌ Falta asignar JEFE DE BRIGADA');
+        checklist.acciones_pendientes.push({
+          paso: 1,
+          accion: 'Asignar jefe de brigada',
+          endpoint: 'POST /api/brigadas/:id/asignar-rol',
+          body: { usuario_id: 'uuid', rol_en_brigada: 'jefe_brigada' }
+        });
+      }
+      if (!reqs.botanico.completado) {
+        checklist.errores.push('❌ Falta asignar BOTÁNICO');
+        checklist.acciones_pendientes.push({
+          paso: 2,
+          accion: 'Asignar botánico',
+          endpoint: 'POST /api/brigadas/:id/asignar-rol',
+          body: { usuario_id: 'uuid', rol_en_brigada: 'botanico' }
+        });
+      }
+      if (!reqs.tecnico_auxiliar.completado) {
+        checklist.errores.push('❌ Falta asignar TÉCNICO AUXILIAR');
+        checklist.acciones_pendientes.push({
+          paso: 3,
+          accion: 'Asignar técnico auxiliar',
+          endpoint: 'POST /api/brigadas/:id/asignar-rol',
+          body: { usuario_id: 'uuid', rol_en_brigada: 'tecnico_auxiliar' }
+        });
+      }
+      if (!reqs.coinvestigadores.completado) {
+        checklist.errores.push(
+          `❌ Faltan COINVESTIGADORES (tiene ${reqs.coinvestigadores.cantidad}, requiere mínimo 2)`
+        );
+        checklist.acciones_pendientes.push({
+          paso: 4,
+          accion: `Asignar ${2 - reqs.coinvestigadores.cantidad} coinvestigador(es) más`,
+          endpoint: 'POST /api/brigadas/:id/asignar-rol',
+          body: { usuario_id: 'uuid', rol_en_brigada: 'coinvestigador' }
+        });
+      }
+      if (!reqs.equipos_ifn.completado) {
+        checklist.errores.push(
+          `❌ Equipos IFN incompletos. Faltantes: ${equiposFaltantes.join(', ')}`
+        );
+        checklist.acciones_pendientes.push({
+          paso: 5,
+          accion: 'Asignar equipos faltantes',
+          endpoint: 'POST /api/brigadas/:id/equipos',
+          body: { equipos: equiposFaltantes.map(e => ({ tipo_equipo: e, cantidad: 1 })) }
+        });
+      }
+      if (!reqs.capacitacion.completado) {
+        checklist.advertencias.push(
+          '⚠️ ADVERTENCIA: Capacitación no completada aún'
+        );
+        checklist.acciones_pendientes.push({
+          paso: 6,
+          accion: 'Marcar capacitación como completada',
+          endpoint: 'PUT /api/brigadas/:id/capacitacion',
+          body: { capacitacion_completada: true }
+        });
+      }
+
+      // Paso 8: Actualizar tabla de validaciones_conformacion
+      await supabase
+        .from('validaciones_conformacion')
+        .upsert(
+          {
+            brigada_id: id,
+            tiene_jefe: reqs.jefe_brigada.completado,
+            tiene_botanico: reqs.botanico.completado,
+            tiene_tecnico: reqs.tecnico_auxiliar.completado,
+            numero_coinvestigadores: reqs.coinvestigadores.cantidad,
+            equipos_completos: reqs.equipos_ifn.completado,
+            capacitacion_completada: reqs.capacitacion.completado,
+            fecha_validacion: new Date(),
+            validado_por: req.user?.id || null,
+            observaciones: `Validación incremental - ${new Date().toLocaleString('es-CO')}`
+          },
+          { onConflict: 'brigada_id' }
+        );
+
+      res.json(checklist);
+    } catch (err) {
+      console.error('Error en GET /api/brigadas/:id/checklist-conformacion:', err);
+      res.status(500).json({
+        error: 'Error al validar conformación de brigada'
+      });
+    }
+  }
+);
+
 
 /**
  * POST /api/brigadas/:id/equipos
@@ -513,6 +815,42 @@ router.post("/conglomerados/:id/asignar-brigada", verificarTokenExterno, async (
     res.status(500).json({ error: "Error al asignar brigada" });
   }
 });
+
+/**
+ * PUT /api/brigadas/:id/capacitacion
+ * Marca la capacitación como completada para una brigada.
+ * Body JSON: { capacitacion_completada: boolean }
+ */
+router.put("/brigadas/:id/capacitacion", verificarTokenExterno, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { capacitacion_completada } = req.body;
+
+    if (capacitacion_completada === undefined) {
+      return res.status(400).json({ 
+        error: "El campo 'capacitacion_completada' es obligatorio" 
+      });
+    }
+
+    const { data, error } = await supabase
+      .from("brigadas")
+      .update({ capacitacion_completada })
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    res.json({
+      mensaje: "Capacitación actualizada correctamente",
+      brigada: data
+    });
+  } catch (err) {
+    console.error("Error en PUT /api/brigadas/:id/capacitacion:", err);
+    res.status(500).json({ error: "Error al actualizar capacitación" });
+  }
+});
+
 
 // Manejo final de rutas no definidas: devuelve JSON 404
 router.use((req, res) => {
