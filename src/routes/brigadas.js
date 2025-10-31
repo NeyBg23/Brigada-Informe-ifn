@@ -852,6 +852,28 @@ router.put("/brigadas/:id/capacitacion", verificarTokenExterno, async (req, res)
 });
 
 
+/**
+ * GET /api/usuarios/me
+ * Obtener datos del usuario autenticado desde el token
+ */
+router.get('/usuarios/me', verificarTokenExterno, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { data, error } = await supabase
+      .from('usuarios')
+      .select('*')
+      .eq('id', userId)
+      .single();
+    
+    if (error) throw error;
+    
+    res.json({ usuario: data });
+  } catch (err) {
+    res.status(500).json({ error: 'Error obteniendo usuario' });
+  }
+});
+
+
 // Manejo final de rutas no definidas: devuelve JSON 404
 router.use((req, res) => {
   res.status(404).json({ error: "Ruta no encontrada" });
