@@ -6,6 +6,7 @@
 import express from "express";
 import { supabase } from "../db/supabase.js";
 import { verificarTokenExterno } from "../middleware/verificarTokenExterno.js";
+import { crearUsuarioEnAuth } from "../services/authExternalService.js";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -77,28 +78,54 @@ router.get(
  * { nombre_completo, correo, cargo, region, telefono, fecha_ingreso, descripcion, rol? }
  * rol por defecto: "brigadista"
  */
+// ✅ CÓDIGO NUEVO (con integración Auth)
+import { crearUsuarioEnAuth } from "../services/authExternalService.js";
+
 router.post("/usuarios", verificarTokenExterno, esAdmin, async (req, res) => {
   try {
     const {
       nombre_completo,
       correo,
+      cedula,
+      contraseña,  // ← RECIBIMOS CONTRASEÑA
       cargo,
       region,
       telefono,
       fecha_ingreso,
       descripcion,
-      rol = "brigadista"
+      rol = "brigadista",
+      hoja_vida_url
     } = req.body;
-    // TODO: reemplazar con lógica de upload real
-    const foto_url = "url_de_foto";
-    const hoja_vida_url = "url_de_pdf";
 
+    // 1️⃣ VALIDAR QUE TENEMOS LA CONTRASEÑA
+    if (!contraseña) {
+      return res.status(400).json({ error: "La contraseña es obligatoria" });
+    }
+
+    // 2️⃣ CREAR USUARIO EN AUTH SERVICE
+    console.log("🔐 Creando usuario en Auth Service...");
+    const authUser = await crearUsuarioEnAuth(correo, contraseña);
+    
+    if (!authUser || !authUser.id) {
+      return res.status(400).json({ 
+        error: "Error creando usuario en Auth Service" 
+      });
+    }
+
+    const auth_id = authUser.id; // ← Obtenemos el ID de Auth
+    
+    console.log("✅ Usuario creado en Auth con ID:", auth_id);
+
+    // 3️⃣ INSERTAR EN BD BRIGADA CON el auth_id
+    const foto_url = "url_de_foto";
+    
     const { data, error } = await supabase
       .from("usuarios")
       .insert([
         {
           nombre_completo,
           correo,
+          cedula,
           cargo,
           region,
           telefono,
@@ -106,26 +133,32 @@ router.post("/usuarios", verificarTokenExterno, esAdmin, async (req, res) => {
           descripcion,
           rol,
           foto_url,
-          hoja_vida_url
+          hoja_vida_url: hoja_vida_url || null,
+          auth_id  // ← AGREGAMOS EL auth_id
         }
       ])
       .select()
       .single();
+
     if (error) throw error;
 
     res.status(201).json({
-      mensaje: "Empleado creado correctamente",
-      usuario: data
+      mensaje: "✅ Empleado creado correctamente",
+      usuario: data,
+      auth_id: auth_id
     });
   } catch (err) {
-    console.error("Error en POST /api/usuarios:", err);
-    res.status(500).json({ error: "Error al crear empleado" });
+    console.error("❌ Error en POST /api/usuarios:", err);
+    res.status(500).json({ 
+      error: "Error al crear empleado: " + err.message 
+    });
   }
 });
 
+
 /**
  * POST /api/empleados
- * Mismo comportamiento que POST /api/usuarios para compatibilidad con frontend.
+ * Mismo comportamiento que POST /api/usuarios (con integración Auth).
  * Acceso: solo admin.
  */
 router.post("/empleados", verificarTokenExterno, esAdmin, async (req, res) => {
@@ -133,22 +166,45 @@ router.post("/empleados", verificarTokenExterno, esAdmin, async (req, res) => {
     const {
       nombre_completo,
       correo,
+      cedula,
+      contraseña,  // ← RECIBIMOS CONTRASEÑA
       cargo,
       region,
       telefono,
       fecha_ingreso,
       descripcion,
-      rol = "brigadista"
+      rol = "brigadista",
+      hoja_vida_url
     } = req.body;
-    const foto_url = "url_de_foto";
-    const hoja_vida_url = "url_de_pdf";
 
+    // 1️⃣ VALIDAR CONTRASEÑA
+    if (!contraseña) {
+      return res.status(400).json({ error: "La contraseña es obligatoria" });
+    }
+
+    // 2️⃣ CREAR EN AUTH SERVICE
+    console.log("🔐 Creando usuario en Auth Service (POST /api/empleados)...");
+    const authUser = await crearUsuarioEnAuth(correo, contraseña);
+    
+    if (!authUser || !authUser.id) {
+      return res.status(400).json({ 
+        error: "Error creando usuario en Auth Service" 
+      });
+    }
+
+    const auth_id = authUser.id;
+    console.log("✅ Usuario creado en Auth con ID:", auth_id);
+
+    // 3️⃣ INSERTAR EN BD BRIGADA
+    const foto_url = "url_de_foto";
+    
     const { data, error } = await supabase
       .from("usuarios")
       .insert([
         {
           nombre_completo,
           correo,
+          cedula,
           cargo,
           region,
           telefono,
@@ -156,22 +212,28 @@ router.post("/empleados", verificarTokenExterno, esAdmin, async (req, res) => {
           descripcion,
           rol,
           foto_url,
-          hoja_vida_url
+          hoja_vida_url: hoja_vida_url || null,
+          auth_id  // ← AGREGAMOS auth_id
         }
       ])
       .select()
       .single();
+
     if (error) throw error;
 
     res.status(201).json({
-      mensaje: "Empleado creado correctamente",
-      usuario: data
+      mensaje: "✅ Empleado creado correctamente",
+      usuario: data,
+      auth_id: auth_id
     });
   } catch (err) {
-    console.error("Error en POST /api/empleados:", err);
-    res.status(500).json({ error: "Error al crear empleado" });
+    console.error("❌ Error en POST /api/empleados:", err);
+    res.status(500).json({ 
+      error: "Error al crear empleado: " + err.message 
+    });
   }
 });
+
 
 /**
  * PUT /api/usuarios/:id/rol
