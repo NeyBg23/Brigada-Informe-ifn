@@ -79,7 +79,6 @@ router.get(
  * rol por defecto: "brigadista"
  */
 // ✅ CÓDIGO NUEVO (con integración Auth)
-import { crearUsuarioEnAuth } from "../services/authExternalService.js";
 
 router.post("/usuarios", verificarTokenExterno, esAdmin, async (req, res) => {
   try {
