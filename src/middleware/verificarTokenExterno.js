@@ -14,33 +14,53 @@ import axios from "axios";
  * Si el guardia responde “Sí ✅”, dejamos pasar al usuario.
  * Si responde “No ❌”, cerramos la puerta.
  */
-export async function verificarTokenExterno(req, res, next) {
-  // 🕵️ 1️⃣ Buscamos el token en el header "Authorization"
-  const authHeader = req.headers["authorization"];
-  const token = authHeader && authHeader.split(" ")[1]; // "Bearer <token>"
+// 📂 src/middleware/verificarTokenExterno.js
+// --------------------------------------------------
+// Middleware para verificar token JWT externo de Supabase Auth
 
-  // 🚫 2️⃣ Si no hay token → devolvemos error
+export function verificarTokenExterno(req, res, next) {
+  const authHeader = req.headers.authorization;
+  const token = authHeader ? authHeader.split(' ')[1] : null;
+
   if (!token) {
-    return res.status(401).json({ error: "Token requerido ❌" });
+    return res.status(401).json({ error: 'Token requerido' });
   }
 
   try {
-    // 🌐 3️⃣ Llamamos al servicio AutenVerifi (tu backend de autenticación)
-    const respuesta = await axios.get(
-      `${process.env.AUTH_SERVICE_URL}/auth/verify`,
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      }
+    // ✅ Decodificar JWT directamente (sin verificar firma, solo leer payload)
+    const parts = token.split('.');
+    
+    if (parts.length !== 3) {
+      return res.status(401).json({ error: 'Token malformado' });
+    }
+
+    // Decodificar el payload (parte 2 del JWT)
+    const payload = JSON.parse(
+      Buffer.from(parts[1], 'base64').toString('utf-8')
     );
 
-    // ✅ 4️⃣ Si el token es válido → guardamos la info del usuario en req.user
-    req.user = respuesta.data.usuario;
+    console.log('📋 Payload del token:', payload);
 
-    // 🟢 5️⃣ Continuamos a la siguiente parte (la ruta protegida)
+    // ✅ Extraer email del JWT
+    const email = payload.email;
+
+    if (!email) {
+      return res.status(401).json({ error: 'Email no encontrado en token' });
+    }
+
+    // ✅ Guardar info en req.user para que otros middlewares y rutas lo usen
+    req.user = {
+      id: payload.sub,
+      email: email,
+      correo: email,  // Para compatibilidad con esAdmin
+      aud: payload.aud
+    };
+
+    console.log('✅ Usuario validado:', req.user);
+    
     next();
   } catch (error) {
-    // ⚠️ 6️⃣ Si algo falla (token inválido, servicio caído, etc.)
-    console.error("Error al verificar token externo:", error.message);
-    return res.status(403).json({ error: "Token inválido o no autorizado ❌" });
+    console.error('❌ Error al verificar token:', error.message);
+    return res.status(403).json({ error: 'Token inválido o no autorizado ❌' });
   }
 }

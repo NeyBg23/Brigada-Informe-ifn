@@ -919,6 +919,8 @@ router.put("/brigadas/:id/capacitacion", verificarTokenExterno, async (req, res)
  */
 router.get('/usuarios/me', verificarTokenExterno, async (req, res) => {
   try {
+    console.log('🔍 Buscando usuario por correo:', req.user.email);
+    
     // ✅ BUSCAR POR CORREO (no por ID de Auth)
     const email = req.user.email || req.user.correo;
 
@@ -933,15 +935,18 @@ router.get('/usuarios/me', verificarTokenExterno, async (req, res) => {
       .single();
     
     if (error || !data) {
+      console.log('❌ Usuario no encontrado:', error);
       return res.status(404).json({ error: 'Usuario no encontrado en Brigada' });
     }
     
+    console.log('✅ Usuario encontrado:', data.correo);
     res.json({ usuario: data });
   } catch (err) {
     console.error('Error en GET /api/usuarios/me:', err);
     res.status(500).json({ error: 'Error obteniendo usuario' });
   }
 });
+
 
 
 // Manejo final de rutas no definidas: devuelve JSON 404
