@@ -919,17 +919,26 @@ router.put("/brigadas/:id/capacitacion", verificarTokenExterno, async (req, res)
  */
 router.get('/usuarios/me', verificarTokenExterno, async (req, res) => {
   try {
-    const userId = req.user.id;
+    // ✅ BUSCAR POR CORREO (no por ID de Auth)
+    const email = req.user.email || req.user.correo;
+
+    if (!email) {
+      return res.status(400).json({ error: 'Email no disponible en token' });
+    }
+
     const { data, error } = await supabase
       .from('usuarios')
       .select('*')
-      .eq('id', userId)
+      .eq('correo', email)
       .single();
     
-    if (error) throw error;
+    if (error || !data) {
+      return res.status(404).json({ error: 'Usuario no encontrado en Brigada' });
+    }
     
     res.json({ usuario: data });
   } catch (err) {
+    console.error('Error en GET /api/usuarios/me:', err);
     res.status(500).json({ error: 'Error obteniendo usuario' });
   }
 });
