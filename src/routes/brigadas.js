@@ -1,4 +1,3 @@
-// 📂 src/routes/brigadas.js
 // ----------------------------------------------------------
 // Rutas para gestionar brigadas, usuarios/empleados y asignaciones.
 // Requiere token válido y roles adecuados (admin para ciertas operaciones).
@@ -757,24 +756,42 @@ router.get("/hoja-vida/:nombreArchivo", async (req, res) => {
   }
 });
 router.get("/perfil", verificarTokenExterno, async (req, res) => {
-  const debug = {};
-  debug.user = "a1dfb2fc-6d75-4d63-8983-755063f19ea8"; // Lo puse estatico por unos problemas, pero ya lo estoy solucionando
+  try {
+      // OBTENER CORREO DEL USUARIO AUTENTICADO
+      const email = req.user.email || req.user.correo;
 
-  const { data, error } = await supabase
-    .from("usuarios")
-    .select("*")
-    .eq("id", debug.user)
-    .single();
-    
-  debug.data = data;
+      if (!email) {
+          return res.status(400).json({ error: "Email no disponible en token" });
+      }
 
-  if (error) {
-    debug.error = error;
-    console.error("Error al obtener perfil:", debug);
-    return res.status(500).json({ message: debug });
+      // BUSCAR EL USUARIO EN LA TABLA "usuarios" POR CORREO
+      const { data, error } = await supabase
+          .from("usuarios")
+          .select("*")
+          .eq("correo", email)
+          .single(); // Usamos .single() para esperar un solo resultado
+
+      // MANEJAR ERRORES O NO ENCONTRADO
+      if (error) {
+          // El error podría ser "PostgrestError: Query returned 0 rows"
+          console.error("Error al obtener perfil (query):", error);
+          // Si el error es de tipo "No encontrado", devolver 404
+          return res.status(404).json({ message: "Usuario no encontrado en la base de datos." });
+      }
+      
+      if (!data) {
+            // Si .single() no encuentra nada, error debería tener un valor,
+            // pero si pasa por aquí, igual devolvemos 404 por seguridad.
+            return res.status(404).json({ message: "Usuario no encontrado." });
+      }
+
+      // RESPUESTA EXITOSA
+      return res.status(200).json({ data });
+
+  } catch (err) {
+      console.error("🔥 Error inesperado en GET /api/perfil:", err);
+      return res.status(500).json({ message: "Error interno al obtener el perfil" });
   }
-
-  return res.status(200).json({ data });
 });
 
 router.put("/perfil", verificarTokenExterno, async (req, res) => {
