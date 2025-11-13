@@ -970,9 +970,65 @@ router.put("/brigadas/:id/capacitacion", verificarTokenExterno, async (req, res)
 
 
 
+/**
+ * GET /api/brigadista/mi-conglomerado
+ * ⭐ NUEVO - Obtener el conglomerado asignado al brigadista autenticado
+ */
+router.get("/brigadista/mi-conglomerado", verificarTokenExterno, async (req, res) => {
+  try {
+    const email = req.user.email || req.user.correo;
+
+    if (!email) {
+      return res.status(400).json({ error: "Email no disponible en token" });
+    }
+
+    // Obtener usuario
+    const { data: usuario, error: err1 } = await supabase
+      .from("usuarios")
+      .select("id")
+      .eq("correo", email)
+      .single();
+
+    if (err1 || !usuario) {
+      return res.status(404).json({ error: "Usuario no encontrado" });
+    }
+
+    // Obtener asignación del brigadista
+    const { data: asignacion, error: err2 } = await supabase
+      .from("asignaciones_conglomerados")
+      .select("conglomerado_id, brigada_id")
+      .eq("brigadista_id", usuario.id)
+      .single();
+
+    if (err2 || !asignacion) {
+      return res.status(404).json({ error: "No tiene conglomerado asignado" });
+    }
+
+    // Obtener detalles del conglomerado
+    const { data: conglomerado, error: err3 } = await supabase
+      .from("conglomerados")
+      .select("*")
+      .eq("id", asignacion.conglomerado_id)
+      .single();
+
+    if (err3) throw err3;
+
+    res.json({
+      success: true,
+      conglomerado,
+      brigada_id: asignacion.brigada_id
+    });
+  } catch (err) {
+    console.error("Error en GET /api/brigadista/mi-conglomerado:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
 // Manejo final de rutas no definidas: devuelve JSON 404
 router.use((req, res) => {
   res.status(404).json({ error: "Ruta no encontrada" });
 });
+
 
 export default router;
