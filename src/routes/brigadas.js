@@ -972,7 +972,13 @@ router.put("/brigadas/:id/capacitacion", verificarTokenExterno, async (req, res)
 
 /**
  * GET /api/brigadista/mi-conglomerado
- * ⭐ NUEVO - Obtener el conglomerado asignado al brigadista autenticado
+ * ⭐ CORREGIDO - Obtener el conglomerado asignado al brigadista autenticado
+ * 
+ * Flujo:
+ * 1. Obtener usuario por email (desde token JWT)
+ * 2. Obtener brigada del usuario desde brigada_brigadistas
+ * 3. Obtener conglomerado asignado a esa brigada desde asignaciones_conglomerados
+ * 4. Retornar detalles completos del conglomerado
  */
 router.get("/brigadista/mi-conglomerado", verificarTokenExterno, async (req, res) => {
   try {
@@ -982,7 +988,9 @@ router.get("/brigadista/mi-conglomerado", verificarTokenExterno, async (req, res
       return res.status(400).json({ error: "Email no disponible en token" });
     }
 
-    // Obtener usuario
+    console.log('🔍 Buscando usuario por email:', email);
+
+    // ✅ PASO 1: Obtener usuario por correo
     const { data: usuario, error: err1 } = await supabase
       .from("usuarios")
       .select("id")
@@ -990,37 +998,97 @@ router.get("/brigadista/mi-conglomerado", verificarTokenExterno, async (req, res
       .single();
 
     if (err1 || !usuario) {
+      console.log('❌ Usuario no encontrado:', err1?.message);
       return res.status(404).json({ error: "Usuario no encontrado" });
     }
 
-    // Obtener asignación del brigadista
-    const { data: asignacion, error: err2 } = await supabase
-      .from("asignaciones_conglomerados")
-      .select("conglomerado_id, brigada_id")
-      .eq("brigadista_id", usuario.id)
+    console.log('✅ Usuario encontrado:', usuario.id);
+
+    // ✅ PASO 2: Obtener brigada del usuario desde brigada_brigadistas
+    const { data: brigadista, error: err2 } = await supabase
+      .from("brigada_brigadistas")
+      .select("brigada_id, rol_en_brigada")
+      .eq("usuario_id", usuario.id)
       .single();
 
-    if (err2 || !asignacion) {
-      return res.status(404).json({ error: "No tiene conglomerado asignado" });
+    if (err2 || !brigadista) {
+      console.log('❌ Brigada no encontrada para usuario:', err2?.message);
+      return res.status(404).json({ 
+        error: "No tienes una brigada asignada" 
+      });
     }
 
-    // Obtener detalles del conglomerado
-    const { data: conglomerado, error: err3 } = await supabase
+    console.log('✅ Brigada encontrada:', brigadista.brigada_id);
+
+    // ✅ PASO 3: Obtener conglomerado asignado a esa brigada
+    const { data: asignacion, error: err3 } = await supabase
+      .from("asignaciones_conglomerados")
+      .select("conglomerado_id, estado_asignacion, coordenadas_lat, coordenadas_lon")
+      .eq("brigada_id", brigadista.brigada_id)
+      .single();
+
+    if (err3 || !asignacion) {
+      console.log('❌ Conglomerado no asignado a brigada:', err3?.message);
+      return res.status(404).json({ 
+        error: "Tu brigada no tiene conglomerado asignado" 
+      });
+    }
+
+    console.log('✅ Conglomerado asignado:', asignacion.conglomerado_id);
+
+    // ✅ PASO 4: Obtener detalles completos del conglomerado
+    const { data: conglomerado, error: err4 } = await supabase
       .from("conglomerados")
       .select("*")
       .eq("id", asignacion.conglomerado_id)
       .single();
 
-    if (err3) throw err3;
+    if (err4 || !conglomerado) {
+      console.log('❌ Detalles de conglomerado no encontrados:', err4?.message);
+      return res.status(404).json({ 
+        error: "No se encontraron detalles del conglomerado" 
+      });
+    }
 
+    console.log('✅ Datos completos del conglomerado obtenidos');
+
+    // ✅ RESPUESTA EXITOSA
     res.json({
       success: true,
-      conglomerado,
-      brigada_id: asignacion.brigada_id
+      usuario: {
+        id: usuario.id,
+        email: email,
+        rol_en_brigada: brigadista.rol_en_brigada
+      },
+      brigada_id: brigadista.brigada_id,
+      asignacion: {
+        conglomerado_id: asignacion.conglomerado_id,
+        estado: asignacion.estado_asignacion,
+        coordenadas: {
+          latitud: asignacion.coordenadas_lat,
+          longitud: asignacion.coordenadas_lon
+        }
+      },
+      conglomerado: {
+        id: conglomerado.id,
+        codigo: conglomerado.codigo || conglomerado.id,
+        nombre: conglomerado.nombre,
+        descripcion: conglomerado.descripcion,
+        ubicacion: conglomerado.ubicacion,
+        region: conglomerado.region,
+        fecha_creacion: conglomerado.fecha_creacion,
+        latitud: asignacion.coordenadas_lat,
+        longitud: asignacion.coordenadas_lon
+      },
+      mensaje: "✅ Conglomerado obtenido correctamente"
     });
+
   } catch (err) {
-    console.error("Error en GET /api/brigadista/mi-conglomerado:", err);
-    res.status(500).json({ error: err.message });
+    console.error("❌ Error en GET /api/brigadista/mi-conglomerado:", err);
+    res.status(500).json({ 
+      error: "Error obteniendo conglomerado del brigadista",
+      detalle: err.message 
+    });
   }
 });
 
