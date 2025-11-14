@@ -8,7 +8,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 
-const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL || "https://iam-auten-verifi-service-ifn.vercel.app";
+const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL || "https://fast-api-login-six.vercel.app/";
 
 /**
  * Crea un usuario en el servicio Auth externo
@@ -18,7 +18,7 @@ const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL || "https://iam-auten-veri
  */
 export async function crearUsuarioEnAuth(correo, contraseña) {
   try {
-    const response = await fetch(`${AUTH_SERVICE_URL}/auth/registrar`, {
+    const response = await fetch(`${AUTH_SERVICE_URL}/registrar`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
