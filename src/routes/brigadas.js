@@ -970,7 +970,7 @@ router.put("/brigadas/:id/capacitacion", verificarTokenExterno, async (req, res)
 
 
 // GET Conglomerado con todos los datos geográficos
-app.get('/api/conglomerados/:conglomeradoId', async (req, res) => {
+router.get('/api/conglomerados/:conglomeradoId', async (req, res) => {
   try {
     const { conglomeradoId } = req.params
 
@@ -1008,7 +1008,7 @@ app.get('/api/conglomerados/:conglomeradoId', async (req, res) => {
 })
 
 // GET Todos los conglomerados (para listar)
-app.get('/api/conglomerados', async (req, res) => {
+router.get('/api/conglomerados', async (req, res) => {
   try {
     const { departamento, municipio } = req.query
 
