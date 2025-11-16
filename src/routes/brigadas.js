@@ -57,7 +57,7 @@ router.get('/usuarios/me', verificarTokenExterno, async (req, res) => {
     const { data, error } = await supabase
       .from('usuarios')
       .select('*')
-      .eq('correo', email)
+      .eq('correo', email.lower())
       .single();
     
     if (error || !data) {
