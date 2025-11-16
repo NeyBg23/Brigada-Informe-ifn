@@ -47,8 +47,7 @@ router.get('/usuarios/me', verificarTokenExterno, async (req, res) => {
   try {
     console.log('🔍 Buscando usuario por correo:', req.user.email);
     
-    // ✅ BUSCAR POR CORREO (no por ID de Auth)
-    const email = req.user.email || req.user.correo;
+    const email = req.user.correo.toLowerCase();
 
     if (!email) {
       return res.status(400).json({ error: 'Email no disponible en token' });
@@ -57,7 +56,7 @@ router.get('/usuarios/me', verificarTokenExterno, async (req, res) => {
     const { data, error } = await supabase
       .from('usuarios')
       .select('*')
-      .eq('correo', email.lower())
+      .eq('correo', email)
       .single();
     
     if (error || !data) {
