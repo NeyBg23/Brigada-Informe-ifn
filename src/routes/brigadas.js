@@ -47,7 +47,7 @@ router.get('/usuarios/me', verificarTokenExterno, async (req, res) => {
   try {
     console.log('🔍 Buscando usuario por correo:', req.user.email);
     
-    const email = req.user.correo.toLowerCase();
+    const email = req.user.correo;
 
     if (!email) {
       return res.status(400).json({ error: 'Email no disponible en token' });
