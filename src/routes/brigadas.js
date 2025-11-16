@@ -197,7 +197,7 @@ router.post("/empleados", verificarTokenExterno, esAdmin, async (req, res) => {
       nombre_completo,
       correo,
       cedula,
-      contraseña,  // ← RECIBIMOS CONTRASEÑA
+      contraseña,
       cargo,
       region,
       telefono,
@@ -207,62 +207,76 @@ router.post("/empleados", verificarTokenExterno, esAdmin, async (req, res) => {
       hoja_vida_url
     } = req.body;
 
-    // 1️⃣ VALIDAR CONTRASEÑA
-    if (!contraseña) {
-      return res.status(400).json({ error: "La contraseña es obligatoria" });
-    }
-
-    // 2️⃣ CREAR EN AUTH SERVICE
-    console.log("🔐 Creando usuario en Auth Service (POST /api/empleados)...");
-    const authUser = await crearUsuarioEnAuth(correo, contraseña);
-    
-    if (!authUser || !authUser.id) {
+    // ✅ VALIDAR CAMPOS OBLIGATORIOS
+    if (!nombre_completo || !correo || !contraseña || !cedula) {
       return res.status(400).json({ 
-        error: "Error creando usuario en Auth Service" 
+        error: "Campos obligatorios: nombre_completo, correo, contraseña, cedula" 
       });
     }
 
-    const auth_id = authUser.id;
-    console.log("✅ Usuario creado en Auth con ID:", auth_id);
-
-    // 3️⃣ INSERTAR EN BD BRIGADA
-    const foto_url = "url_de_foto";
+    console.log("🔐 Creando usuario en Auth Service...");
     
+    let authUser;
+    try {
+      authUser = await crearUsuarioEnAuth(correo, contraseña);
+    } catch (authErr) {
+      console.error("❌ Error Auth:", authErr.message);
+      return res.status(400).json({ 
+        error: `Error en Auth: ${authErr.message}` 
+      });
+    }
+
+    if (!authUser?.id) {
+      return res.status(400).json({ 
+        error: "Auth no retornó ID válido" 
+      });
+    }
+
+    console.log("✅ Usuario creado en Auth con ID:", authUser.id);
+
+    // ✅ INSERTAR EN BD CON TODOS LOS CAMPOS
     const { data, error } = await supabase
       .from("usuarios")
       .insert([
         {
-          nombre_completo,
-          correo,
-          cedula,
+          auth_id: authUser.id,
+          nombre_completo: nombre_completo.trim(),
+          correo: correo.toLowerCase().trim(),
+          cedula: cedula.toString(),
           cargo,
           region,
-          telefono,
-          fecha_ingreso,
-          descripcion,
+          telefono: telefono || null,
+          fecha_ingreso: fecha_ingreso || new Date().toISOString(),
+          descripcion: descripcion || null,
           rol,
-          foto_url,
+          foto_url: null,
           hoja_vida_url: hoja_vida_url || null,
-          auth_id  // ← AGREGAMOS auth_id
+          created_at: new Date().toISOString()
         }
       ])
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error("❌ Error Supabase:", error);
+      throw error;
+    }
+
+    console.log("✅ Empleado creado en BD:", data);
 
     res.status(201).json({
-      mensaje: "✅ Empleado creado correctamente",
-      usuario: data,
-      auth_id: auth_id
+      message: "✅ Empleado creado correctamente",
+      usuario: data
     });
+
   } catch (err) {
-    console.error("❌ Error en POST /api/empleados:", err);
+    console.error("❌ Error POST /empleados:", err);
     res.status(500).json({ 
-      error: "Error al crear empleado: " + err.message 
+      error: `Error: ${err.message}` 
     });
   }
 });
+
 
 
 /**

@@ -35,6 +35,7 @@ export async function crearUsuarioEnAuth(correo, contraseña) {
 
     console.log("✅ Usuario creado en servicio Auth:", data.user?.email || correo);
     return data.user;
+    
   } catch (err) {
     console.error("🔥 Error conexión Auth:", err.message);
     throw err;
