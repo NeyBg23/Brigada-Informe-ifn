@@ -62,7 +62,7 @@ router.get('/usuarios/me', verificarTokenExterno, async (req, res) => {
     
     if (error || !data) {
       console.log('❌ Usuario no encontrado:', error);
-      return res.status(404).json({ error: 'Usuario no encontrado en Brigada: ', supbaseError: error });
+      return res.status(404).json({ error: 'Usuario no encontrado en Brigada: ', supbaseError: error, email });
     }
     
     console.log('✅ Usuario encontrado:', data.correo);
