@@ -969,6 +969,67 @@ router.put("/brigadas/:id/capacitacion", verificarTokenExterno, async (req, res)
 });
 
 
+// GET Conglomerado con todos los datos geográficos
+app.get('/api/conglomerados/:conglomeradoId', async (req, res) => {
+  try {
+    const { conglomeradoId } = req.params
+
+    const { data, error } = await supabase
+      .from('conglomerados')
+      .select('*')
+      .eq('id', conglomeradoId)
+      .single()
+
+    if (error || !data) {
+      return res.status(404).json({ error: 'Conglomerado no encontrado' })
+    }
+
+    res.json({
+      success: true,
+      data: {
+        id: data.id,
+        nombre: data.nombre,
+        codigo: data.codigo,
+        descripcion: data.descripcion,
+        ubicacion: data.ubicacion,
+        region: data.region,
+        departamento: data.departamento,
+        municipio: data.municipio,
+        coordenadas: {
+          latitud: data.latitud,
+          longitud: data.longitud
+        },
+        fecha_establecimiento: data.fecha_establecimiento
+      }
+    })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// GET Todos los conglomerados (para listar)
+app.get('/api/conglomerados', async (req, res) => {
+  try {
+    const { departamento, municipio } = req.query
+
+    let query = supabase.from('conglomerados').select('id, nombre, codigo, ubicacion, departamento, municipio, latitud, longitud')
+
+    if (departamento) query = query.eq('departamento', departamento)
+    if (municipio) query = query.eq('municipio', municipio)
+
+    const { data, error } = await query
+
+    if (error) return res.status(400).json({ error })
+
+    res.json({ success: true, data })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+
+
+
 
 /**
  * GET /api/brigadista/mi-conglomerado
